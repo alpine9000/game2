@@ -24,44 +24,28 @@ Entry:
 	lea	userstack,a7	
 	endif
 
-
 Main:
-	;; 	jsr	_Render		
 	jsr	_Init
 	jsr	_SetupScreen
-
-	if 0
-	move.l	#0,d0
-	;; MusicStart
-	endif
-
-
-	lea 	module,a0
-	move.l	#0,a1
-	move.l	#0,d0
-	jsr	mt_init
-	; mt_init(a6=CUSTOM,a0=TrackerModule, a1=Samples|NULL, d0=InitialSongPos)
-	move.l  vectorBase,a0
-	; mt_install_cia(a6=CUSTOM, a0=AutoVecBase, d0=PALflag.b)
-	move.b	#1,d0
-	jsr	mt_install_cia
-
-	move.b	#1,mt_Enable
-
+	jsr	_MusicInit
 	
 GameLoop:	
 	jsr	WaitVerticalBlank
+
+	if TRACKLOADER=0
+	btst	#6,$bfe001  	; test LEFT mouse click
+	bne 	GameLoop
+	else
 	bra	GameLoop
+	endif
 
 	if TRACKLOADER=0
 QuitGame:
-	;; MusicStop
+	jsr	_MusicStop
 	jmp	LongJump
 	endif
 
-
 	include "os.i"
-
 
 	align 4
 _copper:
@@ -88,11 +72,9 @@ _map:
 	align 4
 bitplanes:
 _bitplanes:
-	;; 	dcb.b	SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT,0
+	;; dcb.b	SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT,0
 	incbin "out/background.bin"
 
-module:
-	incbin "breath_of_life.mod"
 
 	if 0
 tileset:
