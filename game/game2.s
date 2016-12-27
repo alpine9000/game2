@@ -1,6 +1,7 @@
 	include "includes.i"
 
 
+	xdef _custom
 	xdef _bitplanes
 	;; xdef _map
 	;; xdef _tileset
@@ -46,7 +47,7 @@ Main:
 	jsr	mt_install_cia
 
 	move.b	#1,mt_Enable
-	endif
+
 	
 GameLoop:	
 	jsr	WaitVerticalBlank
@@ -98,6 +99,9 @@ tileset:
 _tileset:
 	incbin "out/outzonea.bin"
 	endif
+_custom:
+	dc.l	CUSTOM
+	
 	section	.bss	
 	align 4
 _verticalBlankCount:

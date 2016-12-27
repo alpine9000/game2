@@ -1,4 +1,4 @@
-	if MUSIC=1
+	if P61_MUSIC=1
 	include "P6112-Options.i"
 	xdef	P61_Init
 	xdef	P61_Music

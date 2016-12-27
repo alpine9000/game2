@@ -6,21 +6,17 @@ USERSTACK_ADDRESS=7fffc
 BASE_ADDRESS=4000
 # note: this must be high enough not to conflict with MFMbufE
 BOOTBLOCK_ASM=alpine_bootblock.s
-SRCS=wait.s P6112-Play.s disk.s trackloader.s init.c screen.c game.c ptplayer.s interrupts.s palette_asm.s # music.s
-MUSIC=1
+SRCS=wait.s disk.s trackloader.s init.c screen.c game.c ptplayer.s interrupts.s palette_asm.s # music.s P6112-Play.s
+P61_MUSIC=0
 
-BACKGROUND_SIZED = background_sized.png
-BACKGROUND_SIZED_BIN = $(BACKGROUND_SIZED:.png=.bin)
-BACKGROUND = assets/background.png
-
-IMAGES= $(BACKGROUND_SIZED) #outzonea.png
+IMAGES= background.png
 IMAGEDATA=$(addprefix out/, $(IMAGES:.png=.bin))
 ASSETS=$(IMAGEDATA) 
 
 MAX_P61_SIZE=$(shell ls -Sl assets/P61.* | awk '{print $$5}' | head -1)
 
 LINKER_OPTIONS=-T link.script.x
-VASM_ARGS=-Fhunk -quiet -esc -DSFX=1 -allmp -DMUSIC=$(MUSIC) -DMAX_P61_SIZE=$(MAX_P61_SIZE)
+VASM_ARGS=-Fhunk -quiet -esc -DSFX=1 -allmp -DP61_MUSIC=$(P61_MUSIC) -DMAX_P61_SIZE=$(MAX_P61_SIZE)
 AMIGA_INCLUDE=/usr/local/amiga/m68k-amigaos/ndk/include
 C_LIBS=/usr/local/amiga/m68k-amigaos/vbcc/lib/vcs.lib
 
@@ -96,21 +92,16 @@ out/map-map.s: map.tmx
 	../tools/mapgen/out/mapgen --depth=5 --input=map.tmx
 	mv map-map.s out/
 
-
-out/$(BACKGROUND_SIZED) : $(BACKGROUND) $(RESIZE) Makefile
-	echo $(BACKGROUND_SIZED_BIN)
-	$(RESIZE) --width=320  --height=272 --blur=0.75 --input=$(BACKGROUND) --output=out/$(BACKGROUND_SIZED)
-
-out/$(BACKGROUND_SIZED_BIN): out/$(BACKGROUND_SIZED)
+out/background.bin: assets/background.png
 	$(IMAGECON) --input $< $(IMAGECON_ARGS) --quantize --colors 32 --output-bitplanes  --output-palette --full-color-palette-file --output-palette-asm --output-palette --output-png --output-copperlist --output out/background
 
 out/adf/%.o: %.c
-	-@vc -c99 -O3 -S -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) $< -o out/adf/$*.s 
-	vc -deps -c99 -O3 -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) -c $< -o $@
+	-@vc -c99 -O3 -S -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) $< -o out/adf/$*.s > /dev/null 2> /dev/null
+	vc -c99 -O3 -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) -c $< -o $@
 	#@$(VASM) -depend=make -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
 
 out/workbench/%.o: %.c
-	-@vc -c99 -O3 -S -DTRACKLOADER=0 -I$(AMIGA_INCLUDE) $< -o out/workbench/$*.s 
+	-@vc -c99 -O3 -S -DTRACKLOADER=0 -I$(AMIGA_INCLUDE) $< -o out/workbench/$*.s > /dev/null 2> /dev/null
 	vc -c99 -DTRACKLOADER=0 -I$(AMIGA_INCLUDE) -O3 -c $< -o $@
 	#@$(VASM) -depend=make -DTRACKLOADER=0 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
 
@@ -118,10 +109,6 @@ out/workbench/%.o: %.s
 	$(VASM)  -DTRACKLOADER=0 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE)
 	@$(VASM) -depend=make  -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/workbench/$*.d
 
-out/%.o: %.c
-	vc -c99 -O3 -c $< -o $@
-	-@vc -c99 -O3 -S $< -o out/$*.s > /dev/null 2> /dev/null
-	-@vc -c99 -O0 -S $< -o out/$*-noopt.s > /dev/null 2> /dev/null
 
 out/main.bin: out/adf/main.o $(ADF_OBJS)
 	vlink $(LINKER_OPTIONS)  -brawbin1 $< $(ADF_OBJS) $(C_LIBS) -o $@ 
@@ -132,7 +119,7 @@ out/main.bin: out/adf/main.o $(ADF_OBJS)
 bin/$(GAME_NAME): bin out $(ALL_TOOLS)  $(ALL_WORKBENCH_OBJS) 
 	vlink	-hunkattr DATA=2 -hunkattr CODE=2 -hunkattr .text=2 -hunkattr .code=2 -hunkattr .data=2	-hunkattr .noload=2 -hunkattr .bss=2 $(ALL_WORKBENCH_OBJS) -o $@
 	cp $@ ~/A1200/BlockySkies
-	#cp $@ ~/A4000
+	cp $@ ~/A4000/BlockySkies
 	#cp assets/BlockySkies.info bin
 	#cp assets/BlockySkiesDrawer.info bin
 	#cp assets/BlockySkies.info ~/A1200

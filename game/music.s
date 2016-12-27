@@ -1,4 +1,4 @@
-	if MUSIC=1
+	if P61_MUSIC=1
 	include "includes.i"
 	
 	xdef 	_MusicStart

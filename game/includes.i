@@ -5,5 +5,4 @@
 	include "hardware/dmabits.i"
 	include "hardware/intbits.i"	
 	include "hardware/blit.i"
-	include "macros.i"
 	include "constants.i"

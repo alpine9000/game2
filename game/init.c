@@ -1,14 +1,9 @@
 #include "game.h"
 
-extern unsigned long verticalBlankCount;
-
-volatile struct Custom *custom;
 
 void
 Init()
 {
-  custom = CUSTOM;
-
   custom->dmacon = 0x7ff;  /* disable all dma */
   custom->intena = 0x7fff; /* disable all interrupts */
 

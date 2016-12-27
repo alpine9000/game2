@@ -10,7 +10,7 @@ StartupFromOS:
 	lea 	GetVBR(PC),a5	;else fetch vector base address to a4:
 	jsr 	-30(a6)		;enter Supervisor mode
 	move.l	a4,vectorBase
-	if MUSIC=1
+	if P61_MUSIC=1
 	move.l	a4,P61_VBR
 	endif
 

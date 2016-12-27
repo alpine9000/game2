@@ -1,4 +1,4 @@
-	if MUSIC=1
+	if P61_MUSIC=1
 P61mode	=2	;Try other modes ONLY IF there are no Fxx commands >= 20.
 		;(f.ex., P61.new_ditty only works with P61mode=1)
 

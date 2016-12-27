@@ -1,17 +1,17 @@
 MusicStart:	macro
-	if MUSIC=1
+	if P61_MUSIC=1
 	jsr	_MusicStart
 	endif
 	endm
 
 MusicPlay:	macro
-	if MUSIC=1
+	if P61_MUSIC=1
 	jsr	_MusicPlay
 	endif
 	endm
 
 MusicStop:	macro
-	if MUSIC=1
+	if P61_MUSIC=1
 	jsr	_MusicStop
 	endif
 	endm

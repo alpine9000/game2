@@ -25,6 +25,7 @@ typedef ULONG uint32;
 extern volatile struct Custom *custom;
 extern volatile uint16 copper;
 extern volatile uint8 bitplanes;
+extern unsigned long verticalBlankCount;
 
 extern void WaitVerticalBlank();
 extern void InitInterrupts();

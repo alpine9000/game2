@@ -3,10 +3,6 @@
 #define MAP_WIDTH_WORDS 20
 #define MAP_HEIGHT_WORDS 100
 
-#define SCREEN_HEIGHT 272
-#define SCREEN_WIDTH 320
-
-
 #if 0
 
 #include "game.h"
