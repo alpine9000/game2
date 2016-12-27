@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="left-down" width="20" height="100" tilewidth="16" tileheight="16" nextobjectid="1">
+ <tileset firstgid="1" name="Test" tilewidth="16" tileheight="16" tilecount="300" columns="15">
+  <image source="assets/outzonea.png" width="240" height="320"/>
+ </tileset>
+ <layer name="map" width="20" height="100">
+  <data encoding="base64" compression="zlib">
+   eJztz9dLVnEcx/FHK7VF7l097hW0l0GaZlZgZWkD2hts2oL2FCqtrMTWjRYtb7LI6qJJe0fDtlG2y2jYTnpfPAd+fRH6B74XL865eH++nFNqs9lKlVJKKaWUUkoppZRSSiml1H8FIRge8IQXvOEDX/jBHwEINPqmorfuxSIOdoQgFGEIRwQiEYVoxBh9C9Fb9zojHi3RCq3RBm3RDu3RAR3Ryei7iN661xO90BUJSEQ3JCEZ3ZGCHkg1+t6it+4NwmCkoQ/6oh/S0R8DkIFMDDT6IaK37o3HBAzFMAzHCIzEKIzGGIzFOKOfKHrr3izMRhYmYTKmYCqmYTqyMQMzjX6O6K17y7ECczEP87EAC7EIi7EES7HM6HNEb93bgI1YiVVYjVzkYQ3WYh3ysd7oC0RfKGzCZmzBVmyr5fuKUIzt2CH2O4Vd2I092IuSWr5vn+Of9uOA2B8UynAIh3HE8X7M4ajjeRwncBKnxP60cAZncQ7ncQEXcQmXcQVXcQ3XcUPsbwq3cBt3UI67uIf7eICHeITHqMATsX8qPEMlnuMFXuIVXuMN3uId3qMKH8T+o/AJn/EF1fiKb/iOH/iJX/iNP6gRe5vTv5zgjDqoi3pwgSvcUB8N0BCN0Fjsmwju8IAnvOANH/jCD/4IQCCCECz2zYTmsCMEoQhDOCIQiShEIwaxiBP7v/ZVEs0=
+  </data>
+ </layer>
+</map>
