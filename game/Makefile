@@ -88,7 +88,7 @@ out/adf/%.o: %.s
 	@$(VASM) -depend=make -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
 
 out/adf/%.o: %.c
-	-@vc -c99 -O3 -S -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) $< -o out/adf/$*.s > /dev/null 2> /dev/null
+	-@vc -c99 -O0 -S -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) $< -o out/adf/$*.s > /dev/null 2> /dev/null
 	vc -deps -c99 -O3 -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) -c $< -o $@
 	#@$(VASM) -depend=make -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
 

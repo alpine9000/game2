@@ -87,7 +87,7 @@ typedef struct {
 #define DEFENDER_HEIGHT 8
 #define BASE_WIDTH 22
 #define BASE_HEIGHT 16
-#define BASE_TOP 184
+#define BASE_TOP 192
 #define MYSTERY_INVADER_WIDTH 16
 #define MYSTERY_INVADER_HEIGHT 8
 #define SPRITEMAP_WIDTH 128
@@ -97,14 +97,14 @@ typedef struct {
 #define SCORE_X   25
 #define SCORE_Y   25
 #define HISCORE_X 89
-#define STATUS_LINE_Y 231
+#define STATUS_LINE_Y 239
 #define GAMEOVER_X 70
 #define GAMEOVER_Y 52
 #define INVADER_TOP 70
 #define INVADER_LEFT 20
 #define INVADER_RIGHT_MARGIN 20
 #define INVADER_SPACING 16
-#define DEFENDER_Y 208
+#define DEFENDER_Y 216
 #define CREDIT_LABEL_X 137
 
 #define NUM_DEMO_INVADERS 4
@@ -163,8 +163,8 @@ static actor_t demoInvaders[NUM_DEMO_INVADERS] = {
 };
 
 static actor_t spareDefenders[] = {
-  {24, 232, SPRITE_DEFENDER, 0, ALIVE, 0},
-  {40, 232, SPRITE_DEFENDER, 0, ALIVE, 0}
+  {26, 240, SPRITE_DEFENDER, 0, ALIVE, 0},
+  {42, 240, SPRITE_DEFENDER, 0, ALIVE, 0}
 };
 
 static actor_t bases[NUM_BASES] = {
@@ -207,7 +207,7 @@ int bombRandomColumns[NUM_BOMB_RANDOM_COLUMNS] = { 0, 2, 6, 1, 9, 3, 5, 7, 8, 4,
 static int killScores[NUM_INVADER_ROWS] = { 30, 20, 20, 10, 10};
 static int invaderIndex = 0;
 static int invaderDirection = 1;
-static int invaderSpeed = 500;
+static int invaderSpeed = 1;
 static int score = 0;
 static int credits = 0;
 static int creditsMode = 1;
@@ -372,7 +372,7 @@ initRender()
   gfx_fillRect(work, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, 0);
   gfx_drawStringRetro(work, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
 
-  gfx_bitBlt(work, 0, 0, 5, 100, 22, 16, spriteFrameBuffer);
+  gfx_bitBlt(work, 55, 0, 30, 100, 22, 16, spriteFrameBuffer);
 
 }
 
@@ -1162,14 +1162,16 @@ gameLoop(unsigned time, int key)
       shootMissile();
     }
 
-    #if 0
+
     dropBombs();
     
-    moveDefender();
+    // moveDefender();
     moveInvaders(time);
     moveMissile();
     moveBombs();
     
+
+#if 0
     invaderBaseCollision();
     missileCollision();
     bombCollision();

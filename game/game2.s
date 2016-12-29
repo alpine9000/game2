@@ -35,7 +35,7 @@ Main:
 GameLoop:	
 	jsr	WaitVerticalBlank
 	jsr	ReadJoystick
-	;; 	jsr	_SpaceInvadersLoop 
+	jsr	_SpaceInvadersLoop 
 	if TRACKLOADER=0
 	btst	#6,$bfe001  	; test LEFT mouse click
 	bne 	GameLoop
@@ -59,7 +59,41 @@ copper:
 	dc.w	BPL1PTH,0
 	dc.w    $d007,$fffe
 	dc.w    COLOR01,$0f0
-	dc.w    $e607,$fffe
+	dc.w    $ffdf,$fffe
+	dc.w    $0c07,$fffe	
+	dc.w    COLOR01,$fff
+
+	dc.w    $0d47,$fffe
+	dc.w    COLOR01,$0f0
+	dc.w    $0d67,$fffe
+	dc.w    COLOR01,$fff
+	dc.w    $0e47,$fffe
+	dc.w    COLOR01,$0f0
+	dc.w    $0e67,$fffe
+	dc.w    COLOR01,$fff
+	dc.w    $0f47,$fffe
+	dc.w    COLOR01,$0f0
+	dc.w    $0f67,$fffe
+	dc.w    COLOR01,$fff
+	dc.w    $1047,$fffe
+	dc.w    COLOR01,$0f0
+	dc.w    $1067,$fffe
+	dc.w    COLOR01,$fff
+	dc.w    $1147,$fffe
+	dc.w    COLOR01,$0f0
+	dc.w    $1167,$fffe
+	dc.w    COLOR01,$fff
+	dc.w    $1247,$fffe
+	dc.w    COLOR01,$0f0
+	dc.w    $1267,$fffe
+	dc.w    COLOR01,$fff
+	dc.w    $1347,$fffe
+	dc.w    COLOR01,$0f0
+	dc.w    $1367,$fffe
+	dc.w    COLOR01,$fff
+	dc.w    $1447,$fffe
+	dc.w    COLOR01,$0f0
+	dc.w    $1467,$fffe
 	dc.w    COLOR01,$fff
 	dc.l	$fffffffe
 
