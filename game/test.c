@@ -40,7 +40,7 @@ gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w
 {
   uint8 blah;
   uint8 bitPatterns[] = { 0xff, 0x7f, 0x3f, 0x1f, 0xf, 0x7, 0x3, 0x1};
-  uint8 endBitPatterns[] = { 0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
+  uint8 endBitPatterns[] = { 0xff, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
   uint8 startMask = bitPatterns[dx & 0x7];
   uint8 endMask = endBitPatterns[(dx+w) & 0x7];
   uint16 widthBytes = w/8;
@@ -55,7 +55,10 @@ gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w
 
   int16 shift = (dx&0x7)-(sx&0x7);
 
-  volatile uint16 x, y, s16;
+  printf("shift = %d\n", shift);
+
+  volatile uint16 x, y;
+  volatile uint16 s16;
   for (y = 0; y < h; y++) {
     for (x = 0; x < widthBytes; x++) {
       s16 = *source << 8 | *(source+1);
@@ -92,17 +95,18 @@ gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w
 
 /*
 
-00000000 00001111 11111111 00000000
-11111111 11110000 00000000 00000000
+11111111 11111111 11111100 00000000 0000000
+00000000 00000000 00001111 11111111 0000000
+
 */
 
 int main()
 {
-  //uint8 source[SCREEN_WIDTH_BYTES] = {0xff,0xf0,0,0,0,0,0,0,0,0};
-  uint8 source[SCREEN_WIDTH_BYTES] = {0x0,0x0f,0xff,0,0,0,0,0,0,0};
+  //uint8 source[SCREEN_WIDTH_BYTES] = {0xff,0xfc,0,0,0,0,0,0,0,0};
+  uint8 source[SCREEN_WIDTH_BYTES] = {0xff,0xff,0xfc,0,0,0,0,0,0,0};
   uint8 dest[SCREEN_WIDTH_BYTES] = {0x0,0x0,0x0,0,0,0,0,0,0,0};
 
-  gfx_bitBlt(dest, 12, 0, 12, 0, 12, 1, source);
+  gfx_bitBlt(dest, 0, 0, 1, 0, 17, 1, source);
   // gfx_bitBlt(dest, 0, 0, 1, 0, 12, 1, source);
 
   for (int i = 0; i < SCREEN_WIDTH_BYTES; i++) {

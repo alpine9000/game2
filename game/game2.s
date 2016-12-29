@@ -6,6 +6,7 @@ SCREEN_BIT_DEPTH=1
 	
 	xdef _custom
 	xdef _bitplanes
+	xdef _bitplanes2	
 	xdef _spriteBitplanes
 	xdef _verticalBlankCount
 	xdef _bitplanes
@@ -34,7 +35,7 @@ Main:
 GameLoop:	
 	jsr	WaitVerticalBlank
 	jsr	ReadJoystick
-	jsr	_SpaceInvadersLoop 
+	;; 	jsr	_SpaceInvadersLoop 
 	if TRACKLOADER=0
 	btst	#6,$bfe001  	; test LEFT mouse click
 	bne 	GameLoop
@@ -58,7 +59,7 @@ copper:
 	dc.w	BPL1PTH,0
 	dc.w    $d007,$fffe
 	dc.w    COLOR01,$0f0
-	dc.w    $df07,$fffe
+	dc.w    $e607,$fffe
 	dc.w    COLOR01,$fff
 	dc.l	$fffffffe
 
@@ -71,6 +72,8 @@ _map:
 bitplanes:
 _bitplanes:
 	dcb.b	SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT,0
+_bitplanes2:
+	dcb.b	SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT,0	
 _spriteBitplanes:
 	dcb.b	SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT,0
 

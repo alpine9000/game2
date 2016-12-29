@@ -27,6 +27,7 @@ typedef ULONG uint32;
 extern volatile struct Custom *custom;
 extern volatile uint16 copper;
 extern volatile uint8 bitplanes;
+extern volatile uint8 bitplanes2;
 extern volatile uint8 spriteBitplanes;
 extern unsigned long verticalBlankCount;
 extern volatile uint8 joystick;
@@ -36,4 +37,5 @@ extern void InitInterrupts();
 extern void SetupPalette();
 extern void SpaceInvadersInit();
 extern void SpaceInvadersLoop();
+extern void PokeCopperList(volatile uint32 bitplanesPtr);
 #endif /* __GAME_H */

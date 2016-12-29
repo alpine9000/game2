@@ -68,12 +68,12 @@ typedef struct {
 
 #define MISSILE_SPEED 4
 #define BOMB_SPEED 1
-#define BOMB_DROP_FRAMES 50
-#define DEFENDER_EXPLOSION_FRAMES 100
+#define BOMB_DROP_FRAMES 1
+#define DEFENDER_EXPLOSION_FRAMES 1
 #define DEFENDER_EXPLOSION_FRAMERATE 10
 #define DEMO_FRAME_TIME 1
-#define PLAYER_TURN_MESSAGE_TIME 4000
-#define SCORE_FLICKER_TIME 50
+#define PLAYER_TURN_MESSAGE_TIME 1
+#define SCORE_FLICKER_TIME 1
 
 
 #define SCOREBOARD_HEIGHT 24
@@ -216,7 +216,6 @@ static unsigned frame = 0;
 static int screenDirty = 1;
 static int numDefenders = 0;
 static volatile uint8 *target, *work, *spriteFrameBuffer;
-//static window_h window;
 static int renderTime = 0;
 static int lastTime = 0;
 static int demoIndex = 0;
@@ -262,6 +261,7 @@ static void
 initInvaders()
 {
   unsigned char sprites[] = {2, 0, 0, 1, 1};
+
   for (int y = NUM_INVADER_ROWS-1; y >= 0; y--) {
     for (int x = 0; x < NUM_INVADER_COLUMNS; x++) {
       initInvader(INVADER_LEFT+(x * INVADER_SPACING), INVADER_TOP+(y * INVADER_SPACING), y, x, sprites[y]);
@@ -371,6 +371,9 @@ initRender()
   gfx_fillRect(work, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
   gfx_fillRect(work, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, 0);
   gfx_drawStringRetro(work, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
+
+  gfx_bitBlt(work, 0, 0, 5, 100, 22, 16, spriteFrameBuffer);
+
 }
 
 
@@ -632,7 +635,7 @@ renderScores(int hideScore)
   }
   
   if (dirty) {
-    gfx_fillRect(work, 0, SCORE_Y, INVADER_SCREEN_WIDTH, gfx_retroFontHeight+2, 0);
+    gfx_fillRect(work, 0, SCORE_Y, 90, gfx_retroFontHeight+2, 0);
     if (hideScore != 1) {
       gfx_drawStringRetro(work, SCORE_X, SCORE_Y, scoreBuffer, 1, 3);    
     }
@@ -675,9 +678,11 @@ renderBombs()
 
 
 static void 
-renderGameScreen(int scale)
+renderGameScreen()
 {
-  gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
+  if (screenDirty) {
+    gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
+  }
 
   renderScores(0);
 
@@ -695,12 +700,6 @@ renderGameScreen(int scale)
 
   renderStatusBar(1);
 
-  if (scale) {
-    //gfx_bitBltEx(target, 0, 0, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, SCALED_W, SCALED_H, work);
-  } else {
-    // gfx_bitBlt(target, 0, 0, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, work);
-  }
-
   screenDirty = 0;
 }
 
@@ -708,26 +707,21 @@ renderGameScreen(int scale)
 static void
 renderStartScreen()
 {
-  gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
-
-  renderScores(0);
-
-  renderStatusBar(0);
-
-  screen_text_t text[] = {
-    {"PUSH", (INVADER_SCREEN_WIDTH/2) - (2*(gfx_retroFontWidth+3)), 120-(3*gfx_retroFontHeight),  0xFFFFFFFF},
-    {"ONLY 1PLAYER  BUTTON", (INVADER_SCREEN_WIDTH/2) - (10*(gfx_retroFontWidth+3)), 120,  0xFFFFFFFF}
-  };
-
-  for (unsigned i = 0; i < sizeof(text)/sizeof(screen_text_t); i++) {
-    gfx_drawStringRetro(work, text[i].x, text[i].y, text[i].text, 1, 3);  
-  }
+  if (screenDirty) {
+    gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
     
-
-  if (SCALE != 1) {
-    //gfx_bitBltEx(target, 0, 0, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, SCALED_W, SCALED_H, work);
-  } else {
-    // gfx_bitBlt(target, 0, 0, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, work);
+    renderScores(0);
+    
+    renderStatusBar(0);
+    
+    screen_text_t text[] = {
+      {"PUSH", (INVADER_SCREEN_WIDTH/2) - (2*(gfx_retroFontWidth+3)), 120-(3*gfx_retroFontHeight),  0xFFFFFFFF},
+      {"ONLY 1PLAYER  BUTTON", (INVADER_SCREEN_WIDTH/2) - (10*(gfx_retroFontWidth+3)), 120,  0xFFFFFFFF}
+    };
+    
+    for (unsigned i = 0; i < sizeof(text)/sizeof(screen_text_t); i++) {
+      gfx_drawStringRetro(work, text[i].x, text[i].y, text[i].text, 1, 3);  
+    }
   }
 
   screenDirty = 0;
@@ -739,7 +733,18 @@ renderPlayer1TurnMessageScreen(int time)
   static int flickerTime = 0;
   static int showScore = 0;
 
-  gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
+
+  if (screenDirty) {
+    gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
+    renderStatusBar(0);
+    screen_text_t text[] = {
+      {"PLAY PLAYER<1>", (INVADER_SCREEN_WIDTH/2) - (7*(gfx_retroFontWidth+3)), 120-(2*gfx_retroFontHeight),  0xFFFFFFFF}
+    };
+    
+    for (unsigned i = 0; i < sizeof(text)/sizeof(screen_text_t); i++) {
+      gfx_drawStringRetro(work, text[i].x, text[i].y, text[i].text, 1, 3);  
+    }    
+  }
 
   if (time - flickerTime > SCORE_FLICKER_TIME) {
     showScore = !showScore;
@@ -747,22 +752,6 @@ renderPlayer1TurnMessageScreen(int time)
   }
 
   renderScores(showScore);
-
-  renderStatusBar(0);
-
-  screen_text_t text[] = {
-    {"PLAY PLAYER<1>", (INVADER_SCREEN_WIDTH/2) - (7*(gfx_retroFontWidth+3)), 120-(2*gfx_retroFontHeight),  0xFFFFFFFF}
-  };
-
-  for (unsigned i = 0; i < sizeof(text)/sizeof(screen_text_t); i++) {
-    gfx_drawStringRetro(work, text[i].x, text[i].y, text[i].text, 1, 3);  
-  }
-    
-  if (SCALE != 1) {
-    // gfx_bitBltEx(target, 0, 0, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, SCALED_W, SCALED_H, work);
-  } else {
-    //gfx_bitBlt(target, 0, 0, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, work);
-  }
 
   screenDirty = 0;
 }
@@ -872,9 +861,6 @@ renderDemoScreen(int time)
     demoIndex++;
     lastDemoTime = time;
   }
-
-  //gfx_bitBlt(target, 0, 0, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, work);
-
 
   screenDirty = 0;
 }
@@ -1160,23 +1146,23 @@ init()
 {
   
   work = (uint8*)&bitplanes;
+  target = (uint8*)&bitplanes;
   spriteFrameBuffer = (uint8*)&spriteBitplanes;
 
   initInvaders();
   initAudio();
   initRender();
-
-  //  gfx_bitBlt(work, 12, 0, 0, 0, 16, 8, spriteFrameBuffer);
 }
 
 static void
 gameLoop(unsigned time, int key)
 {
   if (numDefenders > 0) {
-    if (key == ' ') {
+    if (joystick & 0x1) {
       shootMissile();
     }
-    
+
+    #if 0
     dropBombs();
     
     moveDefender();
@@ -1188,10 +1174,11 @@ gameLoop(unsigned time, int key)
     missileCollision();
     bombCollision();
     bombBasesCollision();     
+    #endif
   }
 
   if (screenDirty) {
-    renderGameScreen(SCALE != 1);
+    renderGameScreen();
   }     
   if (frame % 20 == 0) {
     renderTime = time-lastTime;      
@@ -1203,13 +1190,7 @@ gameLoop(unsigned time, int key)
 static void
 startLoop(int time, int key)
 {
-  if (key == '1' && credits > 0) {
-    credits--;
-    currentScreen = SCREEN_PLAYER_TURN_MESSAGE;
-    playerTurnMessageTime = time;
-  } else {
-    renderStartScreen();
-  }
+  renderStartScreen();
 }
 
 static void
@@ -1218,6 +1199,7 @@ playerTurnMessageLoop(int time, int key)
   if (time - playerTurnMessageTime > PLAYER_TURN_MESSAGE_TIME) {
     numDefenders = 3;
     currentScreen = SCREEN_GAME;
+    screenDirty = 1;
   } else {
     renderPlayer1TurnMessageScreen(time);
   }
@@ -1232,15 +1214,6 @@ demoLoop(int time, int key)
 void
 SpaceInvadersInit()
 {
-#if 0
-  window = window_create("Space Invaders", 0, 0, SCALED_W, SCALED_H);
-  //gfx_fillRect(window_getFrameBuffer(window), 0, 0, SCALED_W, SCALED_H, 0xFFFFFFFF);
-  kernel_threadSetWindow(window);
-
-  target = window_getFrameBuffer(window);
-  work = gfx_createFrameBuffer(INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT);
-  spriteFrameBuffer = gfx_createFrameBuffer(INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT);
-#endif
   init();
 }
 
@@ -1281,12 +1254,22 @@ SpaceInvadersLoop()
 
   static uint8 lastJoystick = 0;
 
+#if 0
+  if ((joystick & 1) && credits > 0) {
+    credits--;
+    currentScreen = SCREEN_PLAYER_TURN_MESSAGE;
+    playerTurnMessageTime = time;
+  } else {
+
+#endif
 
   if (lastJoystick != joystick && joystick & 0x1) {
     switch (currentScreen) {
     case SCREEN_START:
-      numDefenders = 3;
-      currentScreen = SCREEN_GAME;
+      credits--;
+      currentScreen = SCREEN_PLAYER_TURN_MESSAGE;
+      playerTurnMessageTime = time;      
+      screenDirty = 1;
       break;
     case SCREEN_DEMO:
       credits++;

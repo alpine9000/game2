@@ -1,6 +1,19 @@
 #include "game.h"
 
 
+void PokeCopperList(volatile uint32 bitplanesPtr)
+{
+  /* poke bitplane pointers into copper list */
+  volatile uint16* copperPtr = &copper;
+
+  for (int i = 0; i < SCREEN_BIT_DEPTH; i++) {
+    copperPtr[1] = (uint16)bitplanesPtr;
+    copperPtr[3] = (uint16)(((uint32)bitplanesPtr)>>16);
+    bitplanesPtr = bitplanesPtr + (SCREEN_WIDTH_BYTES);
+    copperPtr = copperPtr + 4;
+  }
+}
+
 void SetupScreen()
 {
   unsigned i;
@@ -20,16 +33,7 @@ void SetupScreen()
   custom->bpl1mod = SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH-SCREEN_WIDTH_BYTES;
   custom->bpl2mod = SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH-SCREEN_WIDTH_BYTES;
 
-  /* poke bitplane pointers into copper list */
-
-
-  for (i = 0; i < SCREEN_BIT_DEPTH; i++) {
-    copperPtr[1] = (uint16)bitplanesPtr;
-    copperPtr[3] = (uint16)(((uint32)bitplanesPtr)>>16);
-    bitplanesPtr = bitplanesPtr + (SCREEN_WIDTH_BYTES);
-    copperPtr = copperPtr + 4;
-  }
-
+  PokeCopperList(bitplanesPtr);
 
   /* install copper list, then enable dma and selected interrupts */
   custom->cop1lc = (uint32)&copper;
