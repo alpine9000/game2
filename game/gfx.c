@@ -17,9 +17,9 @@ void
 gfx_fillRect(volatile uint8* fb, uint16 x, uint16 y, uint16 w, uint16 h, uint16 color)
 {
   uint8 bitPatterns[] = { 0xff, 0x7f, 0x3f, 0x1f, 0xf, 0x7, 0x3, 0x1};
-  uint8 endBitPatterns[] = { 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
-  uint8 startMask = bitPatterns[x & 0xf];
-  uint8 endMask = endBitPatterns[(x+w) & 0xf];
+  uint8 endBitPatterns[] = { 0xff, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
+  uint8 startMask = bitPatterns[x & 0x7];
+  uint8 endMask = endBitPatterns[(x+w) & 0x7];
   uint8 mask = 0xff;
   uint16 widthBytes = w/8;
   uint16 xBytes = x/8;

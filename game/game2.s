@@ -33,6 +33,7 @@ Main:
 	
 GameLoop:	
 	jsr	WaitVerticalBlank
+	jsr	ReadJoystick
 	jsr	_SpaceInvadersLoop 
 	if TRACKLOADER=0
 	btst	#6,$bfe001  	; test LEFT mouse click
@@ -55,15 +56,10 @@ copper:
 ;;;  bitplane pointers must be first else poking addresses will be incorrect
 	dc.w	BPL1PTL,0
 	dc.w	BPL1PTH,0
-	dc.w	BPL2PTL,0
-	dc.w	BPL2PTH,0
-	dc.w	BPL3PTL,0
-	dc.w	BPL3PTH,0
-	dc.w	BPL4PTL,0
-	dc.w	BPL4PTH,0
-	dc.w	BPL5PTL,0
-	dc.w	BPL5PTH,0
-
+	dc.w    $d007,$fffe
+	dc.w    COLOR01,$0f0
+	dc.w    $df07,$fffe
+	dc.w    COLOR01,$fff
 	dc.l	$fffffffe
 
 	if 0

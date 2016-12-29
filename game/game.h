@@ -29,6 +29,7 @@ extern volatile uint16 copper;
 extern volatile uint8 bitplanes;
 extern volatile uint8 spriteBitplanes;
 extern unsigned long verticalBlankCount;
+extern volatile uint8 joystick;
 
 extern void WaitVerticalBlank();
 extern void InitInterrupts();

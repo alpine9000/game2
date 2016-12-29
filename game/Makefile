@@ -6,7 +6,7 @@ USERSTACK_ADDRESS=7fffc
 BASE_ADDRESS=4000
 # note: this must be high enough not to conflict with MFMbufE
 BOOTBLOCK_ASM=alpine_bootblock.s
-SRCS=sprite_rgba.c glcdfont.c si.c gfx.c wait.s disk.s trackloader.s init.c screen.c game.c ptplayer.s interrupts.s palette_asm.s mt_music_asm.s # music.s P6112-Play.s
+SRCS=joystick.s sprite_rgba.c glcdfont.c si.c gfx.c wait.s disk.s trackloader.s init.c screen.c game.c ptplayer.s interrupts.s palette_asm.s mt_music_asm.s # music.s P6112-Play.s
 P61_MUSIC=0
 
 IMAGES=
@@ -75,7 +75,7 @@ out/bootblock.bin: out/bootblock.o
 out/bootblock.o: $(BOOTBLOCK_ASM) $(PROGRAM_BIN)
 	$(VASM) $(VASM_ARGS)  -DUSERSTACK_ADDRESS="\$$$(USERSTACK_ADDRESS)" -DBASE_ADDRESS="\$$$(BASE_ADDRESS)"  $< -o $@ -I$(AMIGA_INCLUDE)
 
-out/adf/main.o: $(MODULE) $(EXTRA) $(ASSETS) out/map-map.s $(IMAGEDATA)
+out/adf/main.o: $(MODULE) $(EXTRA) $(ASSETS) $(IMAGEDATA)
 	$(VASM)  -DTRACKLOADER=1  $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE)
 	@$(VASM) -depend=make -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > $*.d
 
@@ -86,10 +86,6 @@ out/workbench/main.o: $(MODULE) $(EXTRA) $(ASSETS)
 out/adf/%.o: %.s
 	$(VASM) $(VASM_ARGS)  -DTRACKLOADER=1 $< -o $@ -I$(AMIGA_INCLUDE)
 	@$(VASM) -depend=make -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
-
-out/map-map.s: map.tmx
-	../tools/mapgen/out/mapgen --depth=5 --input=map.tmx
-	mv map-map.s out/
 
 out/adf/%.o: %.c
 	-@vc -c99 -O3 -S -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) $< -o out/adf/$*.s > /dev/null 2> /dev/null

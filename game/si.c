@@ -60,9 +60,9 @@ typedef struct {
   unsigned color;
 } screen_text_t;
 
-#define INVADER_SCREEN_WIDTH 217
-#define INVADER_SCREEN_HEIGHT 248
-#define SCALE  2
+#define INVADER_SCREEN_WIDTH 224
+#define INVADER_SCREEN_HEIGHT 256
+#define SCALE  1
 #define SCALED_W (INVADER_SCREEN_WIDTH*SCALE)
 #define SCALED_H (INVADER_SCREEN_HEIGHT*SCALE)
 
@@ -94,9 +94,9 @@ typedef struct {
 #define SPRITEMAP_HEIGHT 64
 #define GREEN_TOP (BASE_TOP-INVADER_HEIGHT)
 
-#define SCORE_X   23
-#define SCORE_Y   17
-#define HISCORE_X 87
+#define SCORE_X   25
+#define SCORE_Y   25
+#define HISCORE_X 89
 #define STATUS_LINE_Y 231
 #define GAMEOVER_X 70
 #define GAMEOVER_Y 52
@@ -105,11 +105,11 @@ typedef struct {
 #define INVADER_RIGHT_MARGIN 20
 #define INVADER_SPACING 16
 #define DEFENDER_Y 208
-#define CREDIT_LABEL_X 135
+#define CREDIT_LABEL_X 137
 
 #define NUM_DEMO_INVADERS 4
 #define NUM_DEFENDERS_X 7
-#define NUM_DEFENDERS_Y 233
+#define NUM_DEFENDERS_Y 241
 #define NUM_BASES 4
 #define NUM_INVADER_ROWS 5
 #define NUM_INVADER_COLUMNS 11
@@ -157,9 +157,9 @@ static actor_t defender = {0, DEFENDER_Y, SPRITE_DEFENDER, 0, ALIVE, 0};
 
 static actor_t demoInvaders[NUM_DEMO_INVADERS] = {
   {64, 137, SPRITE_MYSTERY_INVADER, 0, ALIVE, 0},
-  {66, 152, SPRITE_INVADER3, 0, ALIVE, 0},
+  {66, 152, SPRITE_INVADER3, 1, ALIVE, 0},
   {66, 168, SPRITE_INVADER1, 0, ALIVE, 0},
-  {66, 184, SPRITE_INVADER2, 3, ALIVE, 0}
+  {66, 184, SPRITE_INVADER2, 1, ALIVE, 0}
 };
 
 static actor_t spareDefenders[] = {
@@ -370,7 +370,7 @@ initRender()
 
   gfx_fillRect(work, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
   gfx_fillRect(work, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, 0);
-  gfx_drawStringRetro(work, 3, 1, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
+  gfx_drawStringRetro(work, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
 }
 
 
@@ -784,18 +784,18 @@ renderDemoScreen(int time)
   renderStatusBar(0);
 
   static screen_text_t text[] = {
-    {"P", 97, 64, 1},
-    {"L", 97+(1*(gfx_retroFontWidth+3)), 64, 1},
-    {"A", 97+(2*(gfx_retroFontWidth+3)), 64, 1},
-    {"Y", 97+(3*(gfx_retroFontWidth+3)), 64, 1},
+    {"P", 97, 65, 1},
+    {"L", 97+(1*(gfx_retroFontWidth+3)), 65, 1},
+    {"A", 97+(2*(gfx_retroFontWidth+3)), 65, 1},
+    {"Y", 97+(3*(gfx_retroFontWidth+3)), 65, 1},
 
-    {"S", 56+(0*(gfx_retroFontWidth+3)), 89, 1},
-    {"P", 56+(1*(gfx_retroFontWidth+3)), 89, 1},
-    {"A", 56+(2*(gfx_retroFontWidth+3)), 89, 1},
-    {"C", 56+(3*(gfx_retroFontWidth+3)), 89, 1},
-    {"E", 56+(4*(gfx_retroFontWidth+3)), 89, 1},
-    {" ", 56+(5*(gfx_retroFontWidth+3)), 89, 1},
-    {" ", 56+(6*(gfx_retroFontWidth+3)), 89, 1},
+    {"S", 57+(0*(gfx_retroFontWidth+3)), 89, 1},
+    {"P", 57+(1*(gfx_retroFontWidth+3)), 89, 1},
+    {"A", 57+(2*(gfx_retroFontWidth+3)), 89, 1},
+    {"C", 57+(3*(gfx_retroFontWidth+3)), 89, 1},
+    {"E", 57+(4*(gfx_retroFontWidth+3)), 89, 1},
+    {" ", 57+(5*(gfx_retroFontWidth+3)), 89, 1},
+    {" ", 57+(6*(gfx_retroFontWidth+3)), 89, 1},
 
     {"I", 114+(0*(gfx_retroFontWidth+3)), 89, 1},
     {"N", 114+(1*(gfx_retroFontWidth+3)), 89, 1},
@@ -806,7 +806,7 @@ renderDemoScreen(int time)
     {"R", 114+(6*(gfx_retroFontWidth+3)), 89, 1},
     {"S", 114+(7*(gfx_retroFontWidth+3)), 89, 1},
 
-    {"*SCORE ADVANCE TABLE*", 32, 120, 1},
+    {"*SCORE ADVANCE TABLE*", 33, 121, 1},
 
     {"=", 81+(0*(gfx_retroFontWidth+3)), 137, 1},
     {"?", 81+(1*(gfx_retroFontWidth+3)), 137, 1},
@@ -1161,12 +1161,6 @@ init()
   
   work = (uint8*)&bitplanes;
   spriteFrameBuffer = (uint8*)&spriteBitplanes;
-  
-
-  #if 0
-    work = (uint8*)&spriteBitplanes;
-    spriteFrameBuffer = (uint8*)&bitplanes;
-    #endif
 
   initInvaders();
   initAudio();
@@ -1261,7 +1255,7 @@ SpaceInvadersLoop()
   time++;
 
   int key = ' ';//getKey();
-  
+  #if 0
   
   switch (key) {
   case 'c':
@@ -1283,7 +1277,27 @@ SpaceInvadersLoop()
   default:
     break;
   }
-  
+#endif  
+
+  static uint8 lastJoystick = 0;
+
+
+  if (lastJoystick != joystick && joystick & 0x1) {
+    switch (currentScreen) {
+    case SCREEN_START:
+      numDefenders = 3;
+      currentScreen = SCREEN_GAME;
+      break;
+    case SCREEN_DEMO:
+      credits++;
+      currentScreen = SCREEN_START;
+      screenDirty = 1;
+      break;
+    }
+  }
+
+  lastJoystick = joystick;
+
   switch (currentScreen) {
   case SCREEN_DEMO:
     demoLoop(time, key);
