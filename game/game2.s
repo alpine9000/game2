@@ -1,10 +1,12 @@
 	include "includes.i"
 
-
+SCREEN_WIDTH_BYTES=320/8
+SCREEN_HEIGHT=278
+SCREEN_BIT_DEPTH=1
+	
 	xdef _custom
 	xdef _bitplanes
-	;; xdef _map
-	;; xdef _tileset
+	xdef _spriteBitplanes
 	xdef _verticalBlankCount
 	xdef _bitplanes
 	xdef _copper
@@ -31,7 +33,7 @@ Main:
 	
 GameLoop:	
 	jsr	WaitVerticalBlank
-
+	jsr	_SpaceInvadersLoop 
 	if TRACKLOADER=0
 	btst	#6,$bfe001  	; test LEFT mouse click
 	bne 	GameLoop
@@ -72,9 +74,9 @@ _map:
 	align 4
 bitplanes:
 _bitplanes:
-	;; dcb.b	SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT,0
-	incbin "out/background.bin"
-
+	dcb.b	SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT,0
+_spriteBitplanes:
+	dcb.b	SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT,0
 
 	if 0
 tileset:

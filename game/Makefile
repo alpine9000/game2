@@ -6,10 +6,10 @@ USERSTACK_ADDRESS=7fffc
 BASE_ADDRESS=4000
 # note: this must be high enough not to conflict with MFMbufE
 BOOTBLOCK_ASM=alpine_bootblock.s
-SRCS=wait.s disk.s trackloader.s init.c screen.c game.c ptplayer.s interrupts.s palette_asm.s mt_music_asm.s # music.s P6112-Play.s
+SRCS=sprite_rgba.c glcdfont.c si.c gfx.c wait.s disk.s trackloader.s init.c screen.c game.c ptplayer.s interrupts.s palette_asm.s mt_music_asm.s # music.s P6112-Play.s
 P61_MUSIC=0
 
-IMAGES= background.png
+IMAGES=
 IMAGEDATA=$(addprefix out/, $(IMAGES:.png=.bin))
 ASSETS=$(IMAGEDATA) 
 
@@ -87,22 +87,18 @@ out/adf/%.o: %.s
 	$(VASM) $(VASM_ARGS)  -DTRACKLOADER=1 $< -o $@ -I$(AMIGA_INCLUDE)
 	@$(VASM) -depend=make -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
 
-
 out/map-map.s: map.tmx
 	../tools/mapgen/out/mapgen --depth=5 --input=map.tmx
 	mv map-map.s out/
 
-out/background.bin: assets/background.png
-	$(IMAGECON) --input $< $(IMAGECON_ARGS) --quantize --colors 32 --output-bitplanes  --output-palette --full-color-palette-file --output-palette-asm --output-palette --output-png --output-copperlist --output out/background
-
 out/adf/%.o: %.c
 	-@vc -c99 -O3 -S -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) $< -o out/adf/$*.s > /dev/null 2> /dev/null
-	vc -c99 -O3 -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) -c $< -o $@
+	vc -deps -c99 -O3 -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) -c $< -o $@
 	#@$(VASM) -depend=make -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
 
 out/workbench/%.o: %.c
 	-@vc -c99 -O3 -S -DTRACKLOADER=0 -I$(AMIGA_INCLUDE) $< -o out/workbench/$*.s > /dev/null 2> /dev/null
-	vc -c99 -DTRACKLOADER=0 -I$(AMIGA_INCLUDE) -O3 -c $< -o $@
+	vc -deps -c99 -O3 -DTRACKLOADER=0 -I$(AMIGA_INCLUDE) -c $< -o $@
 	#@$(VASM) -depend=make -DTRACKLOADER=0 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
 
 out/workbench/%.o: %.s

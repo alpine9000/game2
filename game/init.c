@@ -23,4 +23,6 @@ Init()
   verticalBlankCount = 0;
 
   InitInterrupts();
+
+  SpaceInvadersInit();
 }
