@@ -1165,18 +1165,18 @@ gameLoop(unsigned time, int key)
 
     dropBombs();
     
-    // moveDefender();
+    moveDefender();
     moveInvaders(time);
     moveMissile();
     moveBombs();
     
 
-#if 0
+
     invaderBaseCollision();
     missileCollision();
     bombCollision();
     bombBasesCollision();     
-    #endif
+
   }
 
   if (screenDirty) {

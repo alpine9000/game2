@@ -168,35 +168,19 @@ w = 17
 void
 gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w, int16 h, volatile uint8* source)
 {
-  volatile uint8 blah;
-  uint8 bitPatterns[] = { 0xff, 0x7f, 0x3f, 0x1f, 0xf, 0x7, 0x3, 0x1};
-  uint8 endBitPatterns[] = { 0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
+  static uint8 bitPatterns[] = { 0xff, 0x7f, 0x3f, 0x1f, 0xf, 0x7, 0x3, 0x1};
+  static uint8 endBitPatterns[] = { 0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
   uint8 startMask = bitPatterns[dx & 0x7];
-  uint8 endMask = endBitPatterns[(dx+w) & 0x7];
-  uint16 widthBytes = ((dx+w)/8)-(dx/8);
-
-  dprintf("sx = %d, dx = %d, w = %d, dx + w = %d\n", sx, dx, w, dx+w);
-  printf("widthBytes = %d\n", widthBytes);
-
-  dest += (dy * SCREEN_WIDTH_BYTES);
-  source += (sy * SCREEN_WIDTH_BYTES);
-
-  dprintf("sm = %s\n", byte_to_binary(startMask));
-  dprintf("em = %s %d\n", byte_to_binary(endMask), (dx+w) & 0x7);
-
-  source += sx/8;
-  dest += dx/8;
-
+  volatile uint8 endMask = endBitPatterns[(dx+w) & 0x7];
+  volatile uint16 widthBytes = ((dx+w)/8)-(dx/8)+1;
   int16 shift = (dx&0x7)-(sx&0x7);
 
-  dprintf("extra = %x\n", (w+shift)/8);
-  dprintf("shift = %d\n", shift);
+  dest += (dy * SCREEN_WIDTH_BYTES) + dx/8;;
+  source += (sy * SCREEN_WIDTH_BYTES) + sx/8;
 
-  volatile uint16 x, y;
-  volatile uint8 byte;
-  for (y = 0; y < h; y++) {
-    for (x = 0; x <= widthBytes; x++) {
-
+  for (volatile uint16 y = 0; y < h; y++) {
+    for (volatile uint16 x = 0; x < widthBytes; x++) {
+      volatile uint8 byte;
       if (shift > 0) {
 	byte = (*(uint8*)(source)>>(shift)|*((uint8*)(source)-1)<<(8-(shift)));
       } else if (shift < 0) {
@@ -205,14 +189,10 @@ gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w
 	byte = *source;
       }
 
-      dprintf("byte = %x\n", byte);
-
       if (x == 0) {
 	*dest = (*dest & ~startMask) | (byte & startMask);
-      } else if (x == widthBytes) {
-	blah = (*(dest) & ~endMask);
-	*dest = byte & endMask;
-	*dest |= blah;
+      } else if (x == widthBytes-1) {
+	*dest = (*dest & ~endMask) | (byte & endMask);
       } else {
 	*dest = byte;
       }
@@ -220,8 +200,8 @@ gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w
       dest++;
       source++;
     }
-    dest += SCREEN_WIDTH_BYTES-widthBytes-1;
-    source += SCREEN_WIDTH_BYTES-widthBytes-1;
+    dest += SCREEN_WIDTH_BYTES-widthBytes;
+    source += SCREEN_WIDTH_BYTES-widthBytes;
   }
 }
 
