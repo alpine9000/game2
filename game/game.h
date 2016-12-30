@@ -33,12 +33,14 @@ extern unsigned long verticalBlankCount;
 extern volatile uint8 joystick;
 extern volatile uint8 joystickpos;
 
-extern void WaitVerticalBlank();
-extern void InitInterrupts();
-extern void SetupPalette();
-extern void SpaceInvadersInit();
-extern void SpaceInvadersLoop();
+extern void Init(void);
+extern void WaitVerticalBlank(void);
+extern void InitInterrupts(void);
+extern void SetupPalette(void);
+extern void SetupScreen(void);
+extern void SpaceInvadersInit(void);
+extern void SpaceInvadersLoop(void);
 extern void PokeCopperList(volatile uint32 bitplanesPtr);
-extern void WaitBlitter();
+extern void WaitBlitter(void);
 
 #endif /* __GAME_H */

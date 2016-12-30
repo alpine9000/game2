@@ -1,7 +1,7 @@
 #include "game.h"
 
-
-void PokeCopperList(volatile uint32 bitplanesPtr)
+void 
+PokeCopperList(volatile uint32 bitplanesPtr)
 {
   /* poke bitplane pointers into copper list */
   volatile uint16* copperPtr = &copper;
@@ -14,7 +14,9 @@ void PokeCopperList(volatile uint32 bitplanesPtr)
   }
 }
 
-void SetupScreen()
+
+void 
+SetupScreen(void)
 {
   unsigned i;
   volatile uint16 scratch;

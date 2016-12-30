@@ -1,3 +1,6 @@
+#include "game.h"
+#include "gfx.h"
+
 // standard ascii 5x7 font
 
 const unsigned char font[] = {

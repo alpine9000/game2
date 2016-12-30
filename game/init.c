@@ -2,7 +2,7 @@
 #include "gfx.h"
 
 void
-Init()
+Init(void)
 {
   custom->dmacon = 0x7ff;  /* disable all dma */
   custom->intena = 0x7fff; /* disable all interrupts */

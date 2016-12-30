@@ -2,8 +2,6 @@
 #include "gfx.h"
 #include <hardware/blit.h>
 
-extern  unsigned char  font[];
-
 #define printf(...)
 #define dprintf(...)
 
@@ -74,7 +72,7 @@ gfx_fillRect(volatile uint8* fb, uint16 x, uint16 y, uint16 w, uint16 h, uint16 
 
   if (widthWords > 2) {
     WaitBlitter();    
-    custom->bltcon0 = (DEST|(color ? 0xff : 0x00);
+    custom->bltcon0 = (DEST|(color ? 0xff : 0x00));
     custom->bltdmod = SCREEN_WIDTH_BYTES-((widthWords-2)<<1);
     custom->bltdpt = fb+2;
     custom->bltsize = h<<6 | widthWords-2;

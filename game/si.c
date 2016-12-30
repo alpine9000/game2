@@ -194,7 +194,7 @@ typedef struct {
   int y;
 } coord_t;
 
-coord_t missileBaseExplosion[] = 
+static coord_t missileBaseExplosion[] = 
   {
     {-2, -3}, {0, -3}, {2, -3}, 
     {-1, -2}, {-3, -2}, {0, -2}, {1, -2}, {3, -2},
@@ -202,7 +202,7 @@ coord_t missileBaseExplosion[] =
     {-1, 0}, {-3, 0}, {1, 0}, {3, 0}, {0, 0}
   };
 
-coord_t bombBaseExplosion[] = 
+static coord_t bombBaseExplosion[] = 
   {
     {-2, 3}, {0, 3}, {2, 3}, 
     {-1, 2}, {-3, 2}, {0, 2}, {1, 2}, {3, 2},
@@ -210,15 +210,14 @@ coord_t bombBaseExplosion[] =
     {-1, 0}, {-3, 0}, {1, 0}, {3, 0}, {0, 0}
   };
 
-coord_t* baseExplosion[] = {
+static coord_t* baseExplosion[] = {
   missileBaseExplosion,
   bombBaseExplosion
 };
 
 
-int bombRandomMap[NUM_BOMB_RANDOMS] = { 1, 0, 1, 1, 0, 0, 0, 1, 0, 0};
-int bombRandomColumns[NUM_BOMB_RANDOM_COLUMNS] = { 0, 2, 6, 1, 9, 3, 5, 7, 8, 4, 10};
-
+static int bombRandomMap[NUM_BOMB_RANDOMS] = { 1, 0, 1, 1, 0, 0, 0, 1, 0, 0};
+static int bombRandomColumns[NUM_BOMB_RANDOM_COLUMNS] = { 0, 2, 6, 1, 9, 3, 5, 7, 8, 4, 10};
 static int killScores[NUM_INVADER_ROWS] = { 30, 20, 20, 10, 10};
 static int invaderIndex = 0;
 static int invaderSpeed = 5;
@@ -259,8 +258,8 @@ initInvader(int x, int y, int row, int column, unsigned sprite)
   actor_t *i = &  invaders[invaderIndex];
   i->x = x;
   i->y = y;
-  i->lastX = 0;
-  i->lastY = 0;
+  i->lastX = -1;
+  i->lastY = -1;
   i->sprite = sprite;
   i->spriteIndex = 0;
   i->_state = ALIVE;
@@ -297,10 +296,10 @@ dropBomb(int index, int x, int y)
 }
 
 static void 
-drawSpriteRGBA(unsigned x, unsigned y, unsigned *ptr)
+drawSpriteRGBA(uint16 x, uint16 y, unsigned *ptr)
 {
   unsigned data = (unsigned)(*ptr);
-  unsigned char alpha = data & 0xFF;
+  unsigned char alpha = (data & 0xFF);
   data = (data >> 8) | alpha << 24;
   gfx_drawPixel(spriteFrameBuffer, x, y, data);
 }
@@ -374,23 +373,27 @@ getSpritePixelRGBA(int sprite, int index, int x, int y)
   return 0;
 }
 
-void
+static void
 renderActor(actor_t* actor)
 {
   sprite_t *s = &spriteConfig[actor->sprite];  
 
-  if (actor->lastX != 0) {
+  if (actor->_state != DEAD) {
     if (actor->x != actor->lastX || actor->y != actor->lastY) {
       gfx_fillRect(work, actor->lastX, actor->lastY, s->width, s->height, 0);
+      gfx_bitBlt(work, s->x, s->y[actor->spriteIndex], actor->x, actor->y, s->width, s->height, spriteFrameBuffer);
+      actor->lastX = actor->x;
+      actor->lastY = actor->y;
     } 
   }
+}
 
-  if (actor->_state != DEAD) {
-    gfx_bitBlt(work, s->x, s->y[actor->spriteIndex], actor->x, actor->y, s->width, s->height, spriteFrameBuffer);
-  }
-
-  actor->lastX = actor->x;
-  actor->lastY = actor->y;
+static void
+killActor(actor_t* actor)
+{
+  sprite_t *s = &spriteConfig[actor->sprite];  
+  actor->_state = DEAD;
+  gfx_fillRect(work, actor->lastX, actor->lastY, s->width, s->height, 0);
 }
 
 
@@ -466,7 +469,7 @@ initAudio()
 }
 
 
-//static 
+static 
 void 
 downShiftInvaders(int row)
 {
@@ -494,7 +497,7 @@ moveMissile()
   }
 
   if (missile.y <= (SCOREBOARD_HEIGHT)) {
-    missile._state = DEAD;
+    killActor(&missile);
   }
 }
 
@@ -528,7 +531,7 @@ moveBombs()
     if (b->_state == ALIVE) {
       b->y+=BOMB_SPEED;
       if (b->y >= (STATUS_LINE_Y-BOMB_HEIGHT+2))
-	b->_state = DEAD;
+	killActor(b);
     }    
   }
 }
@@ -593,7 +596,7 @@ moveInvaders(int time)
 	  break;
 	}
       } else if (inv->_state == EXPLODING) {
-	inv->_state = DEAD;
+	killActor(inv);
       }
       if (++index == invaderIndex) {
 	index = 0;
@@ -616,8 +619,7 @@ renderGameOver()
 
 
 
-//static 
-void
+static void
 renderBases()
 {
   for (unsigned i = 0; i < NUM_BASES; i++) {
@@ -744,7 +746,7 @@ renderBombs()
 static void 
 renderGameScreen()
 {
-  //   custom->color[0] = 0xf00;
+  custom->color[0] = 0xf00;
 
   renderScores(0);
 
@@ -762,7 +764,7 @@ renderGameScreen()
   
   renderStatusBar(1);
 
-  //  custom->color[0] = 0x000;
+  custom->color[0] = 0x000;
 }
 
 
@@ -998,7 +1000,7 @@ missileBaseCollision()
       for (int i = 0; i < NUM_BASES; i++) {
 	unsigned pixel = getSpritePixelRGBA(bases[i].sprite, bases[i].spriteIndex, missile.x-bases[i].x+xOffsets[x], missile.y-bases[i].y+y);
 	if (pixel != RGBA_COLOR_BACKGROUND && pixel != 0) {
-	  missile._state = DEAD;
+	  killActor(&missile);
 	  explodeBase(i, 0, missile.x+xOffsets[x], missile.y+y);
 	  return 1;
 	}
@@ -1023,7 +1025,7 @@ bombBaseCollision(int bombIndex)
       for (int i = 0; i < NUM_BASES; i++) {
 	unsigned pixel = getSpritePixelRGBA(bases[i].sprite, bases[i].spriteIndex, b->x-bases[i].x+xOffsets[x], bombY-bases[i].y+y);
 	if (pixel != RGBA_COLOR_BACKGROUND && pixel != 0) {
-	  b->_state = DEAD;
+	  killActor(b);
 	  explodeBase(i, 1, b->x+xOffsets[x], bombY+y-1);
 	  return 1;
 	}
@@ -1058,7 +1060,7 @@ bombCollision()
 	defender._state = EXPLODING;
 	defender.data = 0;
 	defender.spriteIndex = 1;
-	bombs[i]._state = DEAD;
+	killActor(&bombs[i]);
 	//audio_execute(AUDIO_CHANNEL_EXPLOSION);
 	break;
       }
@@ -1088,7 +1090,7 @@ missileCollision()
 	//audio_execute(AUDIO_CHANNEL_KILLED);
 	inv->_state = EXPLODING;
 	inv->spriteIndex = 2;
-	missile._state = DEAD;
+	killActor(&missile);
 	score = score + killScores[((invader_data_t*)inv->data)->row];
 	if (score > hiscore) {
 	  hiscore = score;
@@ -1125,7 +1127,7 @@ moveDefender()
       if (--numDefenders > 0) {
 	defender._state = ALIVE;
       } else {
-	defender._state = DEAD;
+	killActor(&defender);
       }
     } else {
       defender.data = (void*)explosionCount;
@@ -1163,8 +1165,7 @@ getKey()
 }
 
 
-//static 
-void
+static void
 init()
 {
   
@@ -1217,7 +1218,7 @@ startLoop(int time, int key)
 }
 
 static void 
-SetCurrentScreen(int screen)
+setCurrentScreen(int screen)
 {
   currentScreen = screen;
   dirty.screenChange = 1;
@@ -1229,7 +1230,7 @@ playerTurnMessageLoop(int time, int key)
 {
   if (time - playerTurnMessageTime > PLAYER_TURN_MESSAGE_TIME) {
     numDefenders = 3;
-    SetCurrentScreen(SCREEN_GAME);
+    setCurrentScreen(SCREEN_GAME);
     gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
     dirty.statusBar = 1;
   } else {
@@ -1265,11 +1266,11 @@ SpaceInvadersLoop()
   switch (key) {
   case 'c':
     credits++;
-    SetCurrentScreen(SCREEN_START);
+    setCurrentScreen(SCREEN_START);
     break;
   case 'g':
     numDefenders = 3;
-    SetCurrentScreen(SCREEN_GAME);
+    setCurrentScreen(SCREEN_GAME);
     break;
   case 'r':
     creditsMode = !creditsMode;
@@ -1285,12 +1286,12 @@ SpaceInvadersLoop()
     switch (currentScreen) {
     case SCREEN_START:
       credits--;
-      SetCurrentScreen(SCREEN_PLAYER_TURN_MESSAGE);
+      setCurrentScreen(SCREEN_PLAYER_TURN_MESSAGE);
       playerTurnMessageTime = time;      
       break;
     case SCREEN_DEMO:
       credits++;
-      SetCurrentScreen(SCREEN_START);
+      setCurrentScreen(SCREEN_START);
       break;
     }
   }
