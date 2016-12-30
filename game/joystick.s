@@ -3,7 +3,7 @@
 	xdef ReadJoystick
 	xdef WaitForJoystick
 	xdef _joystick
-	xdef joystickpos	
+	xdef _joystickpos	
 	
 ciaa_pra  = $bfe001
 joy1dat   = $dff00c
@@ -47,6 +47,6 @@ WaitForJoystick:
 
 _joystick:
 	dc.b	0
-joystickpos:
+_joystickpos:
 	dc.b	0
 	

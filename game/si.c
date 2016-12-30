@@ -47,11 +47,14 @@ typedef struct {
   int spriteIndex;
   actor_state_t _state;
   void* data;
+  int lastX;
+  int lastY;
 } actor_t;
 
 typedef struct {
   int row;
   int column;
+  int direction;
 } invader_data_t;
 
 
@@ -61,6 +64,11 @@ typedef struct {
   int y;
   unsigned color;
 } screen_text_t;
+
+typedef struct {
+  int statusBar;
+  int score;
+} dirty_t;
 
 #define INVADER_SCREEN_WIDTH 224
 #define INVADER_SCREEN_HEIGHT 256
@@ -125,6 +133,10 @@ typedef struct {
 #define RGBA_COLOR_BACKGROUND 0x000000FF
 
 
+static dirty_t dirty = {
+  1, 1
+};
+
 static sprite_t spriteConfig[] = { 
   {0, INVADER_WIDTH, INVADER_HEIGHT, 5},
   {16, INVADER_WIDTH, INVADER_HEIGHT, 5},
@@ -159,22 +171,22 @@ static actor_t missile = {0, 0, SPRITE_DEFENDER_MISSILE, 0, DEAD, 0};
 static actor_t defender = {0, DEFENDER_Y, SPRITE_DEFENDER, 0, ALIVE, 0};
 
 static actor_t demoInvaders[NUM_DEMO_INVADERS] = {
-  {64, 137, SPRITE_MYSTERY_INVADER, 0, ALIVE, 0},
-  {66, 152, SPRITE_INVADER3, 1, ALIVE, 0},
-  {66, 168, SPRITE_INVADER1, 0, ALIVE, 0},
-  {66, 184, SPRITE_INVADER2, 1, ALIVE, 0}
+  {64, 137, SPRITE_MYSTERY_INVADER, 0, ALIVE, 0, 0, 0},
+  {66, 152, SPRITE_INVADER3, 1, ALIVE, 0, 0, 0},
+  {66, 168, SPRITE_INVADER1, 0, ALIVE, 0, 0, 0},
+  {66, 184, SPRITE_INVADER2, 1, ALIVE, 0, 0, 0}
 };
 
 static actor_t spareDefenders[] = {
-  {26, 240, SPRITE_DEFENDER, 0, ALIVE, 0},
-  {42, 240, SPRITE_DEFENDER, 0, ALIVE, 0}
+  {26, 240, SPRITE_DEFENDER, 0, ALIVE, 0, 0, 0},
+  {42, 240, SPRITE_DEFENDER, 0, ALIVE, 0, 0, 0}
 };
 
 static actor_t bases[NUM_BASES] = {
-  {30, BASE_TOP, SPRITE_BASE, 0, ALIVE, 0},
-  {75, BASE_TOP, SPRITE_BASE, 1, ALIVE, 0},
-  {120, BASE_TOP, SPRITE_BASE, 2, ALIVE, 0},
-  {165, BASE_TOP, SPRITE_BASE, 3, ALIVE, 0}
+  {30, BASE_TOP, SPRITE_BASE, 0, ALIVE, 0, 0, 0},
+  {75, BASE_TOP, SPRITE_BASE, 1, ALIVE, 0, 0, 0},
+  {120, BASE_TOP, SPRITE_BASE, 2, ALIVE, 0, 0, 0},
+  {165, BASE_TOP, SPRITE_BASE, 3, ALIVE, 0, 0, 0}
 };
 
 typedef struct {
@@ -209,8 +221,7 @@ int bombRandomColumns[NUM_BOMB_RANDOM_COLUMNS] = { 0, 2, 6, 1, 9, 3, 5, 7, 8, 4,
 
 static int killScores[NUM_INVADER_ROWS] = { 30, 20, 20, 10, 10};
 static int invaderIndex = 0;
-static int invaderDirection = 1;
-static int invaderSpeed = 1;
+static int invaderSpeed = 5;
 static int score = 0;
 static int credits = 0;
 static int creditsMode = 1;
@@ -249,12 +260,15 @@ initInvader(int x, int y, int row, int column, unsigned sprite)
   actor_t *i = &  invaders[invaderIndex];
   i->x = x;
   i->y = y;
+  i->lastX = 0;
+  i->lastY = 0;
   i->sprite = sprite;
   i->spriteIndex = 0;
   i->_state = ALIVE;
   invader_data_t* data = &invaderData[invaderIndex];
   data->row = row;
   data->column = column;
+  data->direction = 1;
   i->data = data;
   invaderIndex++;
 }
@@ -361,11 +375,20 @@ getSpritePixelRGBA(int sprite, int index, int x, int y)
   return 0;
 }
 
-static void
+void
 renderActor(actor_t* actor)
 {
   sprite_t *s = &spriteConfig[actor->sprite];  
+
+  if (actor->lastX != 0) {
+    if (actor->x != actor->lastX || actor->y != actor->lastY) {
+      gfx_fillRect(work, actor->lastX, actor->lastY, s->width, s->height, 0);
+    } 
+  }
+
   gfx_bitBlt(work, s->x, s->y[actor->spriteIndex], actor->x, actor->y, s->width, s->height, spriteFrameBuffer);
+  actor->lastX = actor->x;
+  actor->lastY = actor->y;
 }
 
 
@@ -379,19 +402,23 @@ initRender()
     }
   }
 
+  /* 00000000 11111111 11111111 00000000 */
+
+  
+  gfx_fillRect(work, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+
+  gfx_drawStringRetro(work, 0, 0, "SCORE<1> HI-SCORE SCORE<2>", 0, 3);  
+
+  int y = -16;
+  for (int x = 0; x < 20; x++) {
+    gfx_fillRect(work, x, y+=16, 15, 16, 0);
+  }
+
+  //  return;
+  
   gfx_fillRect(work, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
   gfx_fillRect(work, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, 0);
   gfx_drawStringRetro(work, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
-
-  //  gfx_bitBlt(work, 0, 0, 8, 100, 12, 8, spriteFrameBuffer);
-
-  for (uint16 x = 0; x < 32; x++) {
-    //    gfx_bitBlt(work, 0, 0, x, x*8, 12, 8, spriteFrameBuffer);
-  }
-  
-  
-  renderActor(&demoInvaders[0]);
-
 }
 
 
@@ -437,16 +464,18 @@ initAudio()
 }
 
 
-static void 
-downShiftInvaders()
+//static 
+void 
+downShiftInvaders(int row)
 {
-  invaderSpeed = invaderSpeed - 50;
+  //invaderSpeed = invaderSpeed - 50;
 
   for (int i = 0; i < invaderIndex; i++) {
     actor_t *inv = &invaders[i];
-    inv->y += (INVADER_HEIGHT);
-    if (inv->y >= GREEN_TOP && inv->spriteIndex < 2) {
-       inv->spriteIndex += 3;
+    if (((invader_data_t*)inv->data)->row == row) {
+      inv->y += (INVADER_HEIGHT);
+      ((invader_data_t*)inv->data)->direction = -((invader_data_t*)inv->data)->direction;
+      inv->x += ((invader_data_t*)inv->data)->direction;
     }
   }
 }
@@ -469,6 +498,27 @@ moveMissile()
 }
 
 
+static actor_t* 
+findBottomInvaderForColumn(int column)
+{
+  for (int i = 0; i < NUM_INVADERS; i++) {
+    if (invaders[i]._state == ALIVE  && ((invader_data_t*)invaders[i].data)->column  == column) {
+      return &invaders[i];
+      break;
+    }
+  }
+  
+  return 0;
+}
+
+
+static actor_t* 
+findBottomInvader()
+{
+  return findBottomInvaderForColumn(bombRandomColumns[frame %  NUM_BOMB_RANDOM_COLUMNS]);
+}
+
+
 static void
 moveBombs()
 {
@@ -483,14 +533,33 @@ moveBombs()
   }
 }
 
+static void
+dropBombs()
+{
+  if (frame % BOMB_DROP_FRAMES == 0) {
+    if (bombRandomMap[frame % NUM_BOMB_RANDOMS]) {
+      for (int i = 0; i < MAX_BOMBS; i++) {
+	if (bombs[i]._state == DEAD) {
+	  actor_t *invader;
+	  if ((invader = findBottomInvader()) != 0) {
+	    dropBomb(i, invader->x + INVADER_WIDTH/2, invader->y + INVADER_HEIGHT);
+	    break;
+	  }
+	}
+      }
+    }
+  }
+}
 
-//static 
+
+static 
 void
 moveInvaders(int time) 
 {
   static int last = 0;
   static unsigned beats[] = {AUDIO_CHANNEL_INVADER1, AUDIO_CHANNEL_INVADER2, AUDIO_CHANNEL_INVADER3, AUDIO_CHANNEL_INVADER4};
   static unsigned char beatIndex = 0;
+  static int index = 0;
 
   if (time-last > invaderSpeed) {
     last = time;
@@ -499,10 +568,16 @@ moveInvaders(int time)
       beatIndex = 0;
     }
 
-    for (int i = 0; i < invaderIndex; i++) {
-      actor_t *inv = &invaders[i];
+    for (int i = 0; i < 4; i++) {
+      actor_t *inv = &invaders[index];
       if (inv->_state == ALIVE) {
-	inv->x += invaderDirection;
+	inv->x += ((invader_data_t*)inv->data)->direction;
+	if (inv->x > INVADER_SCREEN_WIDTH-INVADER_RIGHT_MARGIN) {
+	  downShiftInvaders(((invader_data_t*)inv->data)->row);
+	}
+	if (inv->x < 10) {
+	  downShiftInvaders(((invader_data_t*)inv->data)->row);
+	}
 	switch (inv->spriteIndex) {
 	case 0:
 	  inv->spriteIndex = 1;
@@ -520,31 +595,16 @@ moveInvaders(int time)
       } else if (inv->_state == EXPLODING) {
 	inv->_state = DEAD;
       }
-    }
-    
-    for (int i = 0; i < invaderIndex; i++) {
-      actor_t *inv = &invaders[i];
-      if (inv->_state == ALIVE) {
-	if (inv->x > INVADER_SCREEN_WIDTH-INVADER_RIGHT_MARGIN) {
-	  invaderDirection = -1;
-	  downShiftInvaders();
-	  break;
-	}
+      if (++index == invaderIndex) {
+	index = 0;
       }
     }
     
-    for (int i = 0; i < invaderIndex; i++) {
-      actor_t *inv = &invaders[i];
-      if (inv->_state == ALIVE) {
-	if (inv->x < 10) {
-	  invaderDirection = 1;
-	  downShiftInvaders();
-	  break;
-	}
-      }
-    }
-
+#if 0
     screenDirty = 1;
+#endif
+  } else {
+    dropBombs();
   }
 }
 
@@ -573,32 +633,37 @@ renderBases()
 static void
 renderStatusBar(int drawLine)
 {
-  if (drawLine) {
-    gfx_drawLine(work, 0, STATUS_LINE_Y, INVADER_SCREEN_WIDTH, STATUS_LINE_Y, COLOR_GREEN);
-  }
 
-  gfx_fillRect(work, NUM_DEFENDERS_X, NUM_DEFENDERS_Y, gfx_retroFontWidth, gfx_retroFontHeight, 0);
-  if (drawLine) {
-    char buffer[2] = {'0' + numDefenders, 0};
-    gfx_drawStringRetro(work, NUM_DEFENDERS_X, NUM_DEFENDERS_Y, buffer , 1, 0);    
-  }
-
-  for (int i = 0; i < numDefenders-1; i++) {
-    renderActor(&spareDefenders[i]);
-  }
-
-  gfx_drawStringRetro(work, CREDIT_LABEL_X, NUM_DEFENDERS_Y, "CREDIT ", 1, 3);    
-  static char creditbuffer[3];
-  static int lastCredits = -1;
-  int display = creditsMode ? credits : renderTime;
-  if (display < 99) {
-    if (display != lastCredits) {
-      scoretoa(display, 3, creditbuffer);
-      lastCredits = display;
+  if (dirty.statusBar) {
+    if (drawLine) {
+      gfx_drawLine(work, 0, STATUS_LINE_Y, INVADER_SCREEN_WIDTH, STATUS_LINE_Y, COLOR_GREEN);
     }
-    gfx_drawStringRetro(work, CREDIT_LABEL_X+((gfx_retroFontWidth+3)*7), NUM_DEFENDERS_Y, creditbuffer, 1, 3);    
-  } else {
-    gfx_drawStringRetro(work, CREDIT_LABEL_X+((gfx_retroFontWidth+3)*7), NUM_DEFENDERS_Y, "XX", 1, 3);    
+    
+    gfx_fillRect(work, NUM_DEFENDERS_X, NUM_DEFENDERS_Y, gfx_retroFontWidth, gfx_retroFontHeight, 0);
+    if (drawLine) {
+      char buffer[2] = {'0' + numDefenders, 0};
+      gfx_drawStringRetro(work, NUM_DEFENDERS_X, NUM_DEFENDERS_Y, buffer , 1, 0);    
+    }
+    
+    for (int i = 0; i < numDefenders-1; i++) {
+      renderActor(&spareDefenders[i]);
+    }
+    
+    gfx_drawStringRetro(work, CREDIT_LABEL_X, NUM_DEFENDERS_Y, "CREDIT ", 1, 3);    
+    static char creditbuffer[3];
+    static int lastCredits = -1;
+    int display = creditsMode ? credits : renderTime;
+    if (display < 99) {
+      if (display != lastCredits) {
+	scoretoa(display, 3, creditbuffer);
+	lastCredits = display;
+      }
+      gfx_drawStringRetro(work, CREDIT_LABEL_X+((gfx_retroFontWidth+3)*7), NUM_DEFENDERS_Y, creditbuffer, 1, 3);    
+    } else {
+      gfx_drawStringRetro(work, CREDIT_LABEL_X+((gfx_retroFontWidth+3)*7), NUM_DEFENDERS_Y, "XX", 1, 3);    
+    }
+
+    dirty.statusBar = 0;
   }
 
 }
@@ -686,30 +751,29 @@ renderBombs()
 static void 
 renderGameScreen()
 {
+   custom->color[0] = 0xf00;
+
   if (screenDirty) {
-    //    gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
+
   }
 
-  //  renderScores(0);
+  renderScores(0);
 
-  //  renderGameOver();
+  renderGameOver();
 
-  custom->color[0] = 0xf00;
-  for (volatile uint8 i = 0; i < 16; i++) {
-    renderDefender();
-  }
+  renderDefender();
+
+  renderBases();
+  
+  renderInvaders();
+  
+  renderBombs();
+  
+  renderMissile();
+  
+  renderStatusBar(1);
+
   custom->color[0] = 0x000;
-  //  renderBases();
-
-
-  //  renderInvaders();
-
-
-  //  renderBombs();
-
-  //  renderMissile();
-
-  //  renderStatusBar(1);
 
   screenDirty = 0;
 }
@@ -876,44 +940,6 @@ renderDemoScreen(int time)
   screenDirty = 0;
 }
 
-static actor_t* 
-findBottomInvaderForColumn(int column)
-{
-  for (int i = 0; i < NUM_INVADERS; i++) {
-    if (invaders[i]._state == ALIVE  && ((invader_data_t*)invaders[i].data)->column  == column) {
-      return &invaders[i];
-      break;
-    }
-  }
-  
-  return 0;
-}
-
-
-static actor_t* 
-findBottomInvader()
-{
-  return findBottomInvaderForColumn(bombRandomColumns[frame %  NUM_BOMB_RANDOM_COLUMNS]);
-}
-
-
-static void
-dropBombs()
-{
-  if (frame % BOMB_DROP_FRAMES == 0) {
-    if (bombRandomMap[frame % NUM_BOMB_RANDOMS]) {
-      for (int i = 0; i < MAX_BOMBS; i++) {
-	if (bombs[i]._state == DEAD) {
-	  actor_t *invader;
-	  if ((invader = findBottomInvader()) != 0) {
-	    dropBomb(i, invader->x + INVADER_WIDTH/2, invader->y + INVADER_HEIGHT);
-	    break;
-	  }
-	}
-      }
-    }
-  }
-}
 
 
 static void
@@ -1089,20 +1115,20 @@ static void
 moveDefender()
 {
   if (defender._state == ALIVE) {
-    if (0 /*window_isKeyDown(window, 37)*/) {
+    if (joystickpos == 0x7) {
       defender.x-=2;
       if (defender.x < 0) {
 	defender.x = 0;
       }
-      screenDirty = 1;
+      // screenDirty = 1;
     }
     
-    if (0 /*window_isKeyDown(window, 39)*/) {
+    if (joystickpos == 0x3) {
       defender.x+=2;
       if (defender.x >= INVADER_SCREEN_WIDTH-INVADER_WIDTH) {
 	defender.x = INVADER_SCREEN_WIDTH-INVADER_WIDTH-1;
       }
-      screenDirty = 1;
+      //screenDirty = 1;
     }
   } else if (defender._state == EXPLODING) {
     int explosionCount = (int)defender.data;
@@ -1123,7 +1149,7 @@ moveDefender()
 	defender.spriteIndex = 1;
       }
     }
-    screenDirty = 1;
+    // screenDirty = 1;
   }
 }
 
@@ -1174,12 +1200,11 @@ gameLoop(unsigned time, int key)
     }
 
 
-    //dropBombs();
     
-    //moveDefender();
-    //moveInvaders(time);
-    //moveMissile();
-    //moveBombs();
+    moveDefender();
+    moveInvaders(time);
+    moveMissile();
+    moveBombs();
     
 
 
@@ -1212,7 +1237,8 @@ playerTurnMessageLoop(int time, int key)
   if (time - playerTurnMessageTime > PLAYER_TURN_MESSAGE_TIME) {
     numDefenders = 3;
     currentScreen = SCREEN_GAME;
-    screenDirty = 1;
+    gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
+    dirty.statusBar = 1;
   } else {
     renderPlayer1TurnMessageScreen(time);
   }
@@ -1252,9 +1278,6 @@ SpaceInvadersLoop()
   case 'g':
     numDefenders = 3;
     currentScreen = SCREEN_GAME;
-    break;
-  case 'd':
-    downShiftInvaders();
     break;
   case 'r':
     creditsMode = !creditsMode;

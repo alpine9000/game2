@@ -7,62 +7,80 @@ extern  unsigned char  font[];
 #define printf(...)
 #define dprintf(...)
 
+static uint16 dyOffsetsLUT[SCREEN_HEIGHT];
+static uint16 bltcon0LUT[16];
+
+void 
+gfx_init()
+{
+  for (uint16 y = 0; y < SCREEN_HEIGHT; y++) {
+    dyOffsetsLUT[y] = (y * SCREEN_WIDTH_BYTES);
+  }
+
+  WaitBlitter();
+}
+
 void
 gfx_fillRect(volatile uint8* fb, uint16 x, uint16 y, uint16 w, uint16 h, uint16 color)
 {
-  uint8 bitPatterns[] = { 0xff, 0x7f, 0x3f, 0x1f, 0xf, 0x7, 0x3, 0x1};
-  uint8 endBitPatterns[] = { 0xff, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
-  uint8 startMask = bitPatterns[x & 0x7];
-  uint8 endMask = endBitPatterns[(x+w) & 0x7];
-  uint8 mask = 0xff;
-  uint16 widthBytes = w/8;
-  uint16 xBytes = x/8;
+  static uint16 startBitPatterns[] = { 0xffff,
+			       0x7fff, 0x3fff, 0x1fff, 0x0fff, 
+			       0x07ff, 0x03ff, 0x01ff, 0x00ff,
+			       0x007f, 0x003f, 0x001f, 0x000f,
+			       0x0007, 0x0003, 0x0001, 0x0000 };
 
-  if (!color) {
-    startMask = ~startMask;
-    endMask = ~endMask;
-    mask = 0;
+  static uint16 endBitPatterns[] = { 0xffff, 
+				    0x8000, 0xc000, 0xe000, 0xf000,
+				    0xf800, 0xfc00, 0xfe00, 0xff00,
+				    0xff80, 0xffc0, 0xffe0, 0xfff0,
+				    0xfff8, 0xfffc, 0xfffe, 0xffff};
+
+  uint16 startMask = startBitPatterns[x & 0xf]; 
+  uint16 endMask = endBitPatterns[(x+w) & 0xf]; 
+  uint32 widthWords = (((x&0x0f)+w)+15)>>4;
+  
+  if (widthWords == 1) {
+    startMask &= endMask;
   }
   
-  fb += y * (SCREEN_WIDTH_BYTES);
-  fb += (xBytes);
+  fb += dyOffsetsLUT[y] + (x>>3);
+  
+  WaitBlitter();
 
-  if (color) {
-    for (int y = 0; y < h; y++) {
-      for (int x = 0; x < widthBytes; x++) {
-	if (x == 0) {
-	  *fb++ |= startMask;
-	} else if (x+1 == widthBytes) {
-	  *fb++ |= endMask;
-	} else {
-	  *fb++ = mask;
-	}
-      }
-      fb += (SCREEN_WIDTH_BYTES-widthBytes);
-    } 
-  } else {
-    for (int y = 0; y < h; y++) {
-      for (int x = 0; x < widthBytes; x++) {
-	if (x == 0) {
-	  *fb++ &= startMask;
-	} else if (x+1 == widthBytes) {
-	  *fb++ &= endMask;
-	} else {
-	  *fb++ = mask;
-	}
-      }
-      fb += (SCREEN_WIDTH_BYTES-widthBytes);
-    } 
+  custom->bltcon0 = (SRCC|DEST|0xca);
+  custom->bltcon1 = 0;
+  custom->bltafwm = 0xffff;
+  custom->bltalwm = 0xffff;
+  custom->bltdmod = SCREEN_WIDTH_BYTES-2;
+  custom->bltcmod = SCREEN_WIDTH_BYTES-2;
+  custom->bltbmod = 0;
+  custom->bltamod = 0;
+  custom->bltadat = startMask;
+  custom->bltbdat = color ? 0xffff : 0x0;
+  custom->bltcpt = fb;
+  custom->bltdpt = fb;
+  custom->bltsize = h<<6 | 1;
+
+  if (widthWords > 1) {
+    WaitBlitter();    
+    custom->bltcon0 = (SRCC|DEST|0xca);
+    custom->bltadat = endMask;
+    custom->bltcpt = fb+((widthWords-1)<<1);
+    custom->bltdpt = fb+((widthWords-1)<<1);
+    custom->bltsize = h<<6 | 1;
   }
+
+  if (widthWords > 2) {
+    WaitBlitter();    
+    custom->bltcon0 = (DEST|(color ? 0xff : 0x00);
+    custom->bltdmod = SCREEN_WIDTH_BYTES-((widthWords-2)<<1);
+    custom->bltdpt = fb+2;
+    custom->bltsize = h<<6 | widthWords-2;
+  }    
 
 }
 
-/*
-20
-                     *
-00000000 00000000 00000000 00000000 00000000 
-                  ^
-*/
+
 void
 gfx_drawPixel(volatile uint8* fb, int16 x, int16 y, uint16 color) 
 {
@@ -144,40 +162,12 @@ gfx_drawLine(volatile uint8* fb, int16 x0, int16 y0, int16 x1, int16 y1, uint16 
   }
 }
 
-/*
-
-  11111111 11110000 00000000 00000000 00000000
-
-  00000000 11111111 11000 00000000 00000000
-
-
-  dx = 8
-  sx = 0
-  w  = 12
-  widthWords = 2;
-  int16 shift = (dx&0xf)-(sx&0xf) = 
-*/
-
-static uint16 dyOffsetsLUT[SCREEN_HEIGHT];
-static uint16 widthWordsLUT[32];
-
-void 
-gfx_init()
-{
-  for (uint16 y = 0; y < SCREEN_HEIGHT; y++) {
-    dyOffsetsLUT[y] = (y * SCREEN_WIDTH_BYTES);
-  }
-
-  WaitBlitter();
-  custom->bltafwm = 0xffff;
-  custom->bltalwm = 0x0000;
-}
 
 void
 gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w, int16 h, volatile uint8* source)
 {
-  uint16 widthWords =  ((w+8)>>4)+1;
-  int16 shift = (dx&0xf);
+  uint32 widthWords =  ((w+15)>>4)+1;
+  uint16 shift = (dx&0xf);
 
   dest += dyOffsetsLUT[dy] + (dx>>3);
   source += dyOffsetsLUT[sy] + (sx>>3);
@@ -186,8 +176,8 @@ gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w
 
   custom->bltcon0 = (SRCA|SRCB|SRCC|DEST|0xca|shift<<ASHIFTSHIFT);
   custom->bltcon1 = shift<<BSHIFTSHIFT;
-  //  custom->bltafwm = 0xffff;
-  //custom->bltalwm = 0x0000;
+  custom->bltafwm = 0xffff;
+  custom->bltalwm = 0x0000;
   custom->bltamod = SCREEN_WIDTH_BYTES-(widthWords<<1);
   custom->bltbmod = SCREEN_WIDTH_BYTES-(widthWords<<1);
   custom->bltcmod = SCREEN_WIDTH_BYTES-(widthWords<<1);
@@ -197,44 +187,4 @@ gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w
   custom->bltcpt = dest;
   custom->bltdpt = dest;
   custom->bltsize = h<<6 | widthWords;
-}
-
-void
-_gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w, int16 h, volatile uint8* source)
-{
-  static uint8 bitPatterns[] = { 0xff, 0x7f, 0x3f, 0x1f, 0xf, 0x7, 0x3, 0x1};
-  static uint8 endBitPatterns[] = { 0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
-  uint8 startMask = bitPatterns[dx & 0x7];
-  volatile uint8 endMask = endBitPatterns[(dx+w) & 0x7];
-  volatile uint16 widthBytes = ((dx+w)/8)-(dx/8)+1;
-  int16 shift = (dx&0x7)-(sx&0x7);
-
-  dest += (dy * SCREEN_WIDTH_BYTES) + dx/8;;
-  source += (sy * SCREEN_WIDTH_BYTES) + sx/8;
-
-  for (volatile uint16 y = 0; y < h; y++) {
-    for (volatile uint16 x = 0; x < widthBytes; x++) {
-      volatile uint8 byte;
-      if (shift > 0) {
-	byte = (*(uint8*)(source)>>(shift)|*((uint8*)(source)-1)<<(8-(shift)));
-      } else if (shift < 0) {
-	byte = (*(uint8*)(source)<<(-shift)|*((uint8*)(source)+1)>>(8-(-shift)));
-      } else {
-	byte = *source;
-      }
-
-      if (x == 0) {
-	*dest = (*dest & ~startMask) | (byte & startMask);
-      } else if (x == widthBytes-1) {
-	*dest = (*dest & ~endMask) | (byte & endMask);
-      } else {
-	*dest = byte;
-      }
-
-      dest++;
-      source++;
-    }
-    dest += SCREEN_WIDTH_BYTES-widthBytes;
-    source += SCREEN_WIDTH_BYTES-widthBytes;
-  }
 }
