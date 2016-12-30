@@ -69,10 +69,10 @@ copper:
 ;;;  bitplane pointers must be first else poking addresses will be incorrect
 	dc.w	BPL1PTL,0
 	dc.w	BPL1PTH,0
-	dc.w    $d007,$fffe
+	dc.w    $d407,$fffe
 	dc.w    COLOR01,$0f0
 	dc.w    $ffdf,$fffe
-	dc.w    $0c07,$fffe	
+	dc.w    $0d07,$fffe	
 	dc.w    COLOR01,$fff
 
 	dc.w    $0d47,$fffe

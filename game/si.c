@@ -67,7 +67,7 @@ typedef struct {
 
 typedef struct {
   int statusBar;
-  int score;
+  int screenChange;
 } dirty_t;
 
 #define INVADER_SCREEN_WIDTH 224
@@ -82,11 +82,11 @@ typedef struct {
 #define DEFENDER_EXPLOSION_FRAMES 1
 #define DEFENDER_EXPLOSION_FRAMERATE 10
 #define DEMO_FRAME_TIME 1
-#define PLAYER_TURN_MESSAGE_TIME 1
+#define PLAYER_TURN_MESSAGE_TIME 100
 #define SCORE_FLICKER_TIME 1
 
 
-#define SCOREBOARD_HEIGHT 24
+#define SCOREBOARD_HEIGHT 32
 #define MISSILE_WIDTH 1
 #define MISSILE_HEIGHT 4
 #define INVADER_WIDTH 12
@@ -134,7 +134,7 @@ typedef struct {
 
 
 static dirty_t dirty = {
-  1, 1
+  1, 0
 };
 
 static sprite_t spriteConfig[] = { 
@@ -227,7 +227,6 @@ static int credits = 0;
 static int creditsMode = 1;
 static int hiscore = 0;
 static unsigned frame = 0;
-static int screenDirty = 1;
 static int numDefenders = 0;
 static volatile uint8 *target, *work, *spriteFrameBuffer;
 static int renderTime = 0;
@@ -386,7 +385,10 @@ renderActor(actor_t* actor)
     } 
   }
 
-  gfx_bitBlt(work, s->x, s->y[actor->spriteIndex], actor->x, actor->y, s->width, s->height, spriteFrameBuffer);
+  if (actor->_state != DEAD) {
+    gfx_bitBlt(work, s->x, s->y[actor->spriteIndex], actor->x, actor->y, s->width, s->height, spriteFrameBuffer);
+  }
+
   actor->lastX = actor->x;
   actor->lastY = actor->y;
 }
@@ -489,10 +491,9 @@ moveMissile()
     if ((missile.y+MISSILE_HEIGHT) < BASE_TOP) {
       missile.spriteIndex = 1;
     }
-    screenDirty = 1;
   }
 
-  if (missile.y <= SCOREBOARD_HEIGHT) {
+  if (missile.y <= (SCOREBOARD_HEIGHT)) {
     missile._state = DEAD;
   }
 }
@@ -526,10 +527,9 @@ moveBombs()
     actor_t* b = &bombs[i];
     if (b->_state == ALIVE) {
       b->y+=BOMB_SPEED;
-      if (b->y >= STATUS_LINE_Y)
+      if (b->y >= (STATUS_LINE_Y-BOMB_HEIGHT+2))
 	b->_state = DEAD;
-    }
-    screenDirty = 1;
+    }    
   }
 }
 
@@ -598,11 +598,7 @@ moveInvaders(int time)
       if (++index == invaderIndex) {
 	index = 0;
       }
-    }
-    
-#if 0
-    screenDirty = 1;
-#endif
+    }    
   } else {
     dropBombs();
   }
@@ -672,9 +668,7 @@ renderStatusBar(int drawLine)
 static void 
 renderMissile()
 {
-  if (missile._state == ALIVE) {
-    renderActor(&missile);
-  }
+  renderActor(&missile);
 }
 
 
@@ -686,30 +680,35 @@ renderScores(int hideScore)
   static int lastScore = -1;
   static int lastHiScore = -1;
   static int lastHide = -1;
-  int dirty = 0;
+  int dirtyScore = 0;
+  int dirtyHi = 0;
 
   if (lastHide != hideScore) {
-    dirty = 1;
+    dirtyScore = 1;
     lastHide = hideScore;
   }
 
   if (lastScore != score) {
     scoretoa(score, 5, scoreBuffer);
     lastScore = score;
-    dirty = 1;
+    dirtyScore = 1;
   }
 
   if (lastHiScore != hiscore) {
     scoretoa(hiscore, 5, hiScoreBuffer);
     lastHiScore = hiscore;
-    dirty = 1;
+    dirtyHi = 1;
   }
   
-  if (dirty) {
-    gfx_fillRect(work, 0, SCORE_Y, 90, gfx_retroFontHeight+2, 0);
+  if (dirtyScore) {
+    gfx_fillRect(work, SCORE_X, SCORE_Y, (gfx_retroFontWidth+3)*4, gfx_retroFontHeight+2, 0);
     if (hideScore != 1) {
       gfx_drawStringRetro(work, SCORE_X, SCORE_Y, scoreBuffer, 1, 3);    
     }
+  }
+
+  if (dirtyHi) {
+    gfx_fillRect(work, HISCORE_X, SCORE_Y, (gfx_retroFontWidth+3)*4, gfx_retroFontHeight+2, 0);
     gfx_drawStringRetro(work, HISCORE_X, SCORE_Y, hiScoreBuffer, 1, 3);
   }
 }
@@ -718,9 +717,7 @@ renderScores(int hideScore)
 static void
 renderDefender()
 {
-  if (defender._state != DEAD) {
-    renderActor(&defender);
-  }
+  renderActor(&defender);
 }
 
 
@@ -729,9 +726,7 @@ renderInvaders()
 {
   for (int i = 0; i < invaderIndex; i++) {
     actor_t *inv = & invaders[i];    
-    if (inv->_state != DEAD) {
-      renderActor(inv);
-    }
+    renderActor(inv);
   }
 }
 
@@ -741,9 +736,7 @@ renderBombs()
 {
  for (int i = 0; i < MAX_BOMBS; i++) {
     actor_t *bomb = & bombs[i];    
-    if (bomb->_state != DEAD) {
-      renderActor(bomb);
-    }
+    renderActor(bomb);
   }
 }
 
@@ -751,11 +744,7 @@ renderBombs()
 static void 
 renderGameScreen()
 {
-   custom->color[0] = 0xf00;
-
-  if (screenDirty) {
-
-  }
+  //   custom->color[0] = 0xf00;
 
   renderScores(0);
 
@@ -773,33 +762,33 @@ renderGameScreen()
   
   renderStatusBar(1);
 
-  custom->color[0] = 0x000;
-
-  screenDirty = 0;
+  //  custom->color[0] = 0x000;
 }
 
 
 static void
 renderStartScreen()
 {
-  if (screenDirty) {
+  if (dirty.screenChange) {
     gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
-    
-    renderScores(0);
-    
+
+    WaitBlitter();    
+
+    renderScores(0);    
     renderStatusBar(0);
     
     screen_text_t text[] = {
-      {"PUSH", (INVADER_SCREEN_WIDTH/2) - (2*(gfx_retroFontWidth+3)), 120-(3*gfx_retroFontHeight),  0xFFFFFFFF},
-      {"ONLY 1PLAYER  BUTTON", (INVADER_SCREEN_WIDTH/2) - (10*(gfx_retroFontWidth+3)), 120,  0xFFFFFFFF}
+      {"PUSH", (INVADER_SCREEN_WIDTH/2) - (2*(gfx_retroFontWidth+3)), 120-(3*gfx_retroFontHeight), 1},
+      {"ONLY 1PLAYER  BUTTON", (INVADER_SCREEN_WIDTH/2) - (10*(gfx_retroFontWidth+3)), 120,  1}
     };
-    
+
     for (unsigned i = 0; i < sizeof(text)/sizeof(screen_text_t); i++) {
       gfx_drawStringRetro(work, text[i].x, text[i].y, text[i].text, 1, 3);  
     }
+
+    dirty.screenChange = 0;
   }
 
-  screenDirty = 0;
 }
 
 static void
@@ -809,8 +798,11 @@ renderPlayer1TurnMessageScreen(int time)
   static int showScore = 0;
 
 
-  if (screenDirty) {
+  if (dirty.screenChange) {
     gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
+
+    WaitBlitter();
+
     renderStatusBar(0);
     screen_text_t text[] = {
       {"PLAY PLAYER<1>", (INVADER_SCREEN_WIDTH/2) - (7*(gfx_retroFontWidth+3)), 120-(2*gfx_retroFontHeight),  0xFFFFFFFF}
@@ -818,7 +810,9 @@ renderPlayer1TurnMessageScreen(int time)
     
     for (unsigned i = 0; i < sizeof(text)/sizeof(screen_text_t); i++) {
       gfx_drawStringRetro(work, text[i].x, text[i].y, text[i].text, 1, 3);  
-    }    
+    } 
+
+    dirty.screenChange = 0;
   }
 
   if (time - flickerTime > SCORE_FLICKER_TIME) {
@@ -827,8 +821,6 @@ renderPlayer1TurnMessageScreen(int time)
   }
 
   renderScores(showScore);
-
-  screenDirty = 0;
 }
 
 
@@ -838,7 +830,7 @@ renderDemoScreen(int time)
   static int lastDemoTime = 0;
   static int lastDemoIndex = 0;
 
-  if (screenDirty) {
+  if (dirty.screenChange) {
     lastDemoIndex = 0;
     gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
   }
@@ -936,8 +928,6 @@ renderDemoScreen(int time)
     demoIndex++;
     lastDemoTime = time;
   }
-
-  screenDirty = 0;
 }
 
 
@@ -954,7 +944,6 @@ explodeBase(int baseIndex, int explosionIndex, int x, int y)
   }
   putSpritePixelRGBA(SPRITE_BASE, baseIndex, (x+baseExplosion[explosionIndex][i].x-baseX), (y+baseExplosion[explosionIndex][i].y-baseY), RGBA_COLOR_BACKGROUND);
   transferSprite(SPRITE_BASE, baseIndex);
-  screenDirty = 1;
 }
 
 
@@ -1120,15 +1109,13 @@ moveDefender()
       if (defender.x < 0) {
 	defender.x = 0;
       }
-      // screenDirty = 1;
     }
     
     if (joystickpos == 0x3) {
       defender.x+=2;
-      if (defender.x >= INVADER_SCREEN_WIDTH-INVADER_WIDTH) {
-	defender.x = INVADER_SCREEN_WIDTH-INVADER_WIDTH-1;
+      if (defender.x >= INVADER_SCREEN_WIDTH-INVADER_WIDTH-3) {
+	defender.x = INVADER_SCREEN_WIDTH-INVADER_WIDTH-3;
       }
-      //screenDirty = 1;
     }
   } else if (defender._state == EXPLODING) {
     int explosionCount = (int)defender.data;
@@ -1149,7 +1136,6 @@ moveDefender()
 	defender.spriteIndex = 1;
       }
     }
-    // screenDirty = 1;
   }
 }
 
@@ -1215,10 +1201,9 @@ gameLoop(unsigned time, int key)
 
   }
 
-  //if (screenDirty) {
-    renderGameScreen();
-    //}     
-  if (frame % 20 == 0) {
+  renderGameScreen();
+  
+if (frame % 20 == 0) {
     renderTime = time-lastTime;      
   }
   lastTime = time;
@@ -1231,12 +1216,20 @@ startLoop(int time, int key)
   renderStartScreen();
 }
 
+static void 
+SetCurrentScreen(int screen)
+{
+  currentScreen = screen;
+  dirty.screenChange = 1;
+}
+
+
 static void
 playerTurnMessageLoop(int time, int key) 
 {
   if (time - playerTurnMessageTime > PLAYER_TURN_MESSAGE_TIME) {
     numDefenders = 3;
-    currentScreen = SCREEN_GAME;
+    SetCurrentScreen(SCREEN_GAME);
     gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
     dirty.statusBar = 1;
   } else {
@@ -1272,16 +1265,14 @@ SpaceInvadersLoop()
   switch (key) {
   case 'c':
     credits++;
-    currentScreen = SCREEN_START;
-    screenDirty = 1;
+    SetCurrentScreen(SCREEN_START);
     break;
   case 'g':
     numDefenders = 3;
-    currentScreen = SCREEN_GAME;
+    SetCurrentScreen(SCREEN_GAME);
     break;
   case 'r':
     creditsMode = !creditsMode;
-    screenDirty = 1;
     break;
   default:
     break;
@@ -1290,27 +1281,16 @@ SpaceInvadersLoop()
 
   static uint8 lastJoystick = 0;
 
-#if 0
-  if ((joystick & 1) && credits > 0) {
-    credits--;
-    currentScreen = SCREEN_PLAYER_TURN_MESSAGE;
-    playerTurnMessageTime = time;
-  } else {
-
-#endif
-
   if (lastJoystick != joystick && joystick & 0x1) {
     switch (currentScreen) {
     case SCREEN_START:
       credits--;
-      currentScreen = SCREEN_PLAYER_TURN_MESSAGE;
+      SetCurrentScreen(SCREEN_PLAYER_TURN_MESSAGE);
       playerTurnMessageTime = time;      
-      screenDirty = 1;
       break;
     case SCREEN_DEMO:
       credits++;
-      currentScreen = SCREEN_START;
-      screenDirty = 1;
+      SetCurrentScreen(SCREEN_START);
       break;
     }
   }

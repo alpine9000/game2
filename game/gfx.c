@@ -18,6 +18,8 @@ gfx_init()
   }
 
   WaitBlitter();
+
+  custom->bltafwm = 0xffff;
 }
 
 void
@@ -49,7 +51,7 @@ gfx_fillRect(volatile uint8* fb, uint16 x, uint16 y, uint16 w, uint16 h, uint16 
 
   custom->bltcon0 = (SRCC|DEST|0xca);
   custom->bltcon1 = 0;
-  custom->bltafwm = 0xffff;
+  // custom->bltafwm = 0xffff;
   custom->bltalwm = 0xffff;
   custom->bltdmod = SCREEN_WIDTH_BYTES-2;
   custom->bltcmod = SCREEN_WIDTH_BYTES-2;
@@ -176,7 +178,7 @@ gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w
 
   custom->bltcon0 = (SRCA|SRCB|SRCC|DEST|0xca|shift<<ASHIFTSHIFT);
   custom->bltcon1 = shift<<BSHIFTSHIFT;
-  custom->bltafwm = 0xffff;
+  //  custom->bltafwm = 0xffff;
   custom->bltalwm = 0x0000;
   custom->bltamod = SCREEN_WIDTH_BYTES-(widthWords<<1);
   custom->bltbmod = SCREEN_WIDTH_BYTES-(widthWords<<1);
