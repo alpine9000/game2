@@ -1,6 +1,9 @@
 #ifndef __SI_H
 #define __SI_H
 
+extern void si_init(void);
+extern void si_loop(void);
+
 extern const unsigned char sprite_rgba[];
 
 extern const unsigned char shoot_wav[];

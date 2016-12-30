@@ -24,23 +24,17 @@ typedef USHORT uint16;
 typedef LONG int32;
 typedef ULONG uint32;
 
+
 extern volatile struct Custom *custom;
 extern volatile uint16 copper;
 extern volatile uint8 bitplanes;
-extern volatile uint8 bitplanes2;
 extern volatile uint8 spriteBitplanes;
 extern unsigned long verticalBlankCount;
-extern volatile uint8 joystick;
-extern volatile uint8 joystickpos;
 
-extern void Init(void);
-extern void WaitVerticalBlank(void);
-extern void InitInterrupts(void);
-extern void SetupPalette(void);
-extern void SetupScreen(void);
-extern void SpaceInvadersInit(void);
-extern void SpaceInvadersLoop(void);
-extern void PokeCopperList(volatile uint32 bitplanesPtr);
-extern void WaitBlitter(void);
+#include "hw.h"
+#include "si.h"
+#include "init.h"
+#include "screen.h"
+#include "gfx.h"
 
 #endif /* __GAME_H */

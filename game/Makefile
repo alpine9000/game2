@@ -6,7 +6,7 @@ USERSTACK_ADDRESS=7fffc
 BASE_ADDRESS=4000
 # note: this must be high enough not to conflict with MFMbufE
 BOOTBLOCK_ASM=alpine_bootblock.s
-SRCS=joystick.s  glcdfont.c si.c gfx.c wait.s disk.s trackloader.s init.c screen.c ptplayer.s interrupts.s palette_asm.s mt_music_asm.s # music.s P6112-Play.s #sprite_rgba.c
+SRCS=hw_asm.s glcdfont.c si.c gfx.c disk.s trackloader.s init.c screen.c ptplayer.s mt_music_asm.s # music.s P6112-Play.s #sprite_rgba.c
 P61_MUSIC=0
 
 IMAGES=sprite.png
@@ -25,7 +25,7 @@ MODULE=$(GAME_NAME).s
 PROGRAM_BIN=out/main.bin
 
 VASM=/usr/local/amiga/m68k-amigaos/bin/vasmm68k_mot
-CFLAGS=-warn=-1 -dontwarn=170 -dontwarn=306 -dontwarn=166 -dontwarn=167  -dontwarn=307 -dontwarn=208 -maxoptpasses=100 -deps -c99 -O3
+CFLAGS=-warn=-1 -dontwarn=170 -dontwarn=306 -dontwarn=166 -dontwarn=167  -dontwarn=307 -dontwarn=208 -maxoptpasses=100  -c99 -O3
 
 ASM_SRCS=$(SRCS:.s=.o)
 C_SRCS=$(ASM_SRCS:.c=.o)
@@ -92,14 +92,16 @@ out/adf/%.o: %.s
 	@$(VASM) -depend=make -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
 
 out/adf/%.o: %.c
-	-@vc $(CFLAGS) -S -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) $< -o out/adf/$*.s > /dev/null 2> /dev/null
+	-@vc -deps $(CFLAGS) -S -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) $< -o out/adf/$*.s > /dev/null 2> /dev/null
+	-@/bin/echo -n "out/adf/" | cat - $*.dep > out/adf/$*.d
+	-@rm $*.dep
 	vc $(CFLAGS) -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) -c $< -o $@
-	#@$(VASM) -depend=make -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
 
 out/workbench/%.o: %.c
-	-@vc $(CFLAGS) -S -DTRACKLOADER=0 -I$(AMIGA_INCLUDE) $< -o out/workbench/$*.s > /dev/null 2> /dev/null
+	-@vc -deps $(CFLAGS) -S -DTRACKLOADER=0 -I$(AMIGA_INCLUDE) $< -o out/workbench/$*.s > /dev/null 2> /dev/null
+	-@/bin/echo -n "out/workbench/" | cat - $*.dep > out/workbench/$*.d
+	-@rm $*.dep
 	vc $(CFLAGS) -DTRACKLOADER=0 -I$(AMIGA_INCLUDE) -c $< -o $@
-	#@$(VASM) -depend=make -DTRACKLOADER=0 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
 
 out/workbench/%.o: %.s
 	$(VASM)  -DTRACKLOADER=0 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE)
@@ -123,10 +125,15 @@ bin/$(GAME_NAME): bin out $(ALL_TOOLS)  $(ALL_WORKBENCH_OBJS)
 	#ls -lh bin/BlockySkies
 
 .PHONY: clean
-clean:
+clean:	
 	rm -rf out bin *~
 
+depend:
+	echo $(ALL_DEPENDS)
+
 -include $(ALL_DEPENDS)
+$(ALL_OBJS): Makefile
+$(ALL_WORKBENCH_OBJS): Makefile
 
 include externals.mk
 include run.mk

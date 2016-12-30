@@ -1,13 +1,12 @@
 #include "game.h"
-#include "gfx.h"
 
 void
-Init(void)
+init_amiga(void)
 {
   custom->dmacon = 0x7ff;  /* disable all dma */
   custom->intena = 0x7fff; /* disable all interrupts */
 
-  WaitVerticalBlank();
+  hw_waitVerticalBlank();
 
   custom->intena = 0x7fff; /* disable all interrupts */
   custom->dmacon = 0x7fff; /* disable all dma */
@@ -22,7 +21,7 @@ Init(void)
 
   verticalBlankCount = 0;
 
-  InitInterrupts();
+  hw_interruptsInit();
   
   gfx_init();
 }

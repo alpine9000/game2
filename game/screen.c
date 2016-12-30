@@ -1,7 +1,7 @@
 #include "game.h"
 
 void 
-PokeCopperList(volatile uint32 bitplanesPtr)
+screen_pokeCopperList(volatile uint32 bitplanesPtr)
 {
   /* poke bitplane pointers into copper list */
   volatile uint16* copperPtr = &copper;
@@ -16,7 +16,7 @@ PokeCopperList(volatile uint32 bitplanesPtr)
 
 
 void 
-SetupScreen(void)
+screen_setup(void)
 {
   unsigned i;
   volatile uint16 scratch;
@@ -25,7 +25,7 @@ SetupScreen(void)
 
   /* set up playfield */
   
-  SetupPalette();
+  hw_setupPalette();
 
   custom->diwstrt = (RASTER_Y_START<<8)|RASTER_X_START;
   custom->diwstop = ((RASTER_Y_STOP-256)<<8)|(RASTER_X_STOP-256);
@@ -35,7 +35,7 @@ SetupScreen(void)
   custom->bpl1mod = SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH-SCREEN_WIDTH_BYTES;
   custom->bpl2mod = SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH-SCREEN_WIDTH_BYTES;
 
-  PokeCopperList(bitplanesPtr);
+  screen_pokeCopperList(bitplanesPtr);
 
   /* install copper list, then enable dma and selected interrupts */
   custom->cop1lc = (uint32)&copper;

@@ -1,6 +1,4 @@
 #include "game.h"
-#include "si.h"
-#include "gfx.h"
 
 //#define DEBUG
 
@@ -774,7 +772,7 @@ renderStartScreen()
   if (dirty.screenChange) {
     gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
 
-    WaitBlitter();    
+    hw_waitBlitter();    
 
     renderScores(0);    
     renderStatusBar(0);
@@ -803,7 +801,7 @@ renderPlayer1TurnMessageScreen(int time)
   if (dirty.screenChange) {
     gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
 
-    WaitBlitter();
+    hw_waitBlitter();
 
     renderStatusBar(0);
     screen_text_t text[] = {
@@ -1106,14 +1104,14 @@ static void
 moveDefender()
 {
   if (defender._state == ALIVE) {
-    if (joystickpos == 0x7) {
+    if (hw_joystickPos == 0x7) {
       defender.x-=2;
       if (defender.x < 0) {
 	defender.x = 0;
       }
     }
     
-    if (joystickpos == 0x3) {
+    if (hw_joystickPos == 0x3) {
       defender.x+=2;
       if (defender.x >= INVADER_SCREEN_WIDTH-INVADER_WIDTH-3) {
 	defender.x = INVADER_SCREEN_WIDTH-INVADER_WIDTH-3;
@@ -1182,7 +1180,7 @@ static void
 gameLoop(unsigned time, int key)
 {
   if (numDefenders > 0) {
-    if (joystick & 0x1) {
+    if (hw_joystickButton & 0x1) {
       shootMissile();
     }
 
@@ -1245,13 +1243,13 @@ demoLoop(int time, int key)
 }
 
 void
-SpaceInvadersInit()
+si_init()
 {
   init();
 }
 
 void
-SpaceInvadersLoop()
+si_loop()
 {
   USE(lastTime);
 
@@ -1282,7 +1280,7 @@ SpaceInvadersLoop()
 
   static uint8 lastJoystick = 0;
 
-  if (lastJoystick != joystick && joystick & 0x1) {
+  if (lastJoystick != hw_joystickButton && hw_joystickButton & 0x1) {
     switch (currentScreen) {
     case SCREEN_START:
       credits--;
@@ -1296,7 +1294,7 @@ SpaceInvadersLoop()
     }
   }
 
-  lastJoystick = joystick;
+  lastJoystick = hw_joystickButton;
 
   switch (currentScreen) {
   case SCREEN_DEMO:

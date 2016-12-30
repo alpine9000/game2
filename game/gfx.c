@@ -1,5 +1,4 @@
 #include "game.h"
-#include "gfx.h"
 #include <hardware/blit.h>
 
 #define printf(...)
@@ -15,7 +14,7 @@ gfx_init()
     dyOffsetsLUT[y] = (y * SCREEN_WIDTH_BYTES);
   }
 
-  WaitBlitter();
+  hw_waitBlitter();
 
   custom->bltafwm = 0xffff;
 }
@@ -45,7 +44,7 @@ gfx_fillRect(volatile uint8* fb, uint16 x, uint16 y, uint16 w, uint16 h, uint16 
   
   fb += dyOffsetsLUT[y] + (x>>3);
   
-  WaitBlitter();
+  hw_waitBlitter();
 
   custom->bltcon0 = (SRCC|DEST|0xca);
   custom->bltcon1 = 0;
@@ -62,7 +61,7 @@ gfx_fillRect(volatile uint8* fb, uint16 x, uint16 y, uint16 w, uint16 h, uint16 
   custom->bltsize = h<<6 | 1;
 
   if (widthWords > 1) {
-    WaitBlitter();    
+    hw_waitBlitter();    
     custom->bltcon0 = (SRCC|DEST|0xca);
     custom->bltadat = endMask;
     custom->bltcpt = fb+((widthWords-1)<<1);
@@ -71,7 +70,7 @@ gfx_fillRect(volatile uint8* fb, uint16 x, uint16 y, uint16 w, uint16 h, uint16 
   }
 
   if (widthWords > 2) {
-    WaitBlitter();    
+    hw_waitBlitter();    
     custom->bltcon0 = (DEST|(color ? 0xff : 0x00));
     custom->bltdmod = SCREEN_WIDTH_BYTES-((widthWords-2)<<1);
     custom->bltdpt = fb+2;
@@ -172,7 +171,7 @@ gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w
   dest += dyOffsetsLUT[dy] + (dx>>3);
   source += dyOffsetsLUT[sy] + (sx>>3);
 
-  WaitBlitter();
+  hw_waitBlitter();
 
   custom->bltcon0 = (SRCA|SRCB|SRCC|DEST|0xca|shift<<ASHIFTSHIFT);
   custom->bltcon1 = shift<<BSHIFTSHIFT;
