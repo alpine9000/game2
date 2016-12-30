@@ -9,7 +9,7 @@ BOOTBLOCK_ASM=alpine_bootblock.s
 SRCS=joystick.s sprite_rgba.c glcdfont.c si.c gfx.c wait.s disk.s trackloader.s init.c screen.c game.c ptplayer.s interrupts.s palette_asm.s mt_music_asm.s # music.s P6112-Play.s
 P61_MUSIC=0
 
-IMAGES=
+IMAGES=sprite.png
 IMAGEDATA=$(addprefix out/, $(IMAGES:.png=.bin))
 ASSETS=$(IMAGEDATA) 
 
@@ -69,6 +69,9 @@ $(ADF): out/bootblock.bin
 
 wb: bin/$(GAME_NAME)
 
+out/sprite.bin: assets/sprite.png
+	$(IMAGECON) --quantize --colors=2 --full-color-palette --use-palette=palette.pal --input=assets/sprite.png --output=out/sprite --output-bitplanes --output-png --output-palette
+
 out/bootblock.bin: out/bootblock.o
 	vlink -brawbin1 $< -o $@
 
@@ -88,7 +91,7 @@ out/adf/%.o: %.s
 	@$(VASM) -depend=make -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
 
 out/adf/%.o: %.c
-	-@vc -c99 -O0 -S -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) $< -o out/adf/$*.s > /dev/null 2> /dev/null
+	-@vc -c99 -O3 -S -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) $< -o out/adf/$*.s > /dev/null 2> /dev/null
 	vc -deps -c99 -O3 -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) -c $< -o $@
 	#@$(VASM) -depend=make -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
 

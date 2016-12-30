@@ -5,7 +5,7 @@
 //#define DEBUG
 
 #define USE(x) do { x = x; } while(0);
-
+#define SPRITE_MAX_SPRITES 6
 
 typedef enum {
   ALIVE = 1,
@@ -32,9 +32,11 @@ typedef enum {
 } screen_t;
 
 typedef struct {
+  int x;
   int width;
   int height;
   int count;
+  int y[SPRITE_MAX_SPRITES];
 } sprite_t;
 
 
@@ -122,15 +124,16 @@ typedef struct {
 #define COLOR_GREEN 0xFF00FF00
 #define RGBA_COLOR_BACKGROUND 0x000000FF
 
+
 static sprite_t spriteConfig[] = { 
-  {INVADER_WIDTH, INVADER_HEIGHT, 5}, /* 12,  8, 5 */
-  {INVADER_WIDTH, INVADER_HEIGHT, 5}, /* 12,  8, 5 */
-  {INVADER_WIDTH, INVADER_HEIGHT, 5}, /* 12,  8, 5 */
-  {BOMB_WIDTH, BOMB_HEIGHT, 3},       /*  3,  7, 3 */
-  {DEFENDER_WIDTH,DEFENDER_HEIGHT, 4},/* 15,  8, 4 */
-  {MISSILE_WIDTH, MISSILE_HEIGHT, 2}, /*  1,  4, 2 */
-  {BASE_WIDTH, BASE_HEIGHT, 4},       /*  22,16, 4 */
-  {MYSTERY_INVADER_WIDTH, MYSTERY_INVADER_HEIGHT, 1}, /* 16, 8, 1 */
+  {0, INVADER_WIDTH, INVADER_HEIGHT, 5},
+  {16, INVADER_WIDTH, INVADER_HEIGHT, 5},
+  {32, INVADER_WIDTH, INVADER_HEIGHT, 5},
+  {48, BOMB_WIDTH, BOMB_HEIGHT, 3},
+  {64, DEFENDER_WIDTH,DEFENDER_HEIGHT, 4},
+  {80, MISSILE_WIDTH, MISSILE_HEIGHT, 2},
+  {96, MYSTERY_INVADER_WIDTH, MYSTERY_INVADER_HEIGHT, 1},
+  {112, BASE_WIDTH, BASE_HEIGHT, 4},
   {0, 0, 0}
 };
 
@@ -141,8 +144,8 @@ typedef enum {
   SPRITE_MISSILE = 3,
   SPRITE_DEFENDER = 4,
   SPRITE_DEFENDER_MISSILE = 5,
-  SPRITE_BASE = 6,
-  SPRITE_MYSTERY_INVADER = 7
+  SPRITE_MYSTERY_INVADER = 6,
+  SPRITE_BASE = 7,
 } sprite_index_t;
 
 
@@ -358,13 +361,21 @@ getSpritePixelRGBA(int sprite, int index, int x, int y)
   return 0;
 }
 
+static void
+renderActor(actor_t* actor)
+{
+  sprite_t *s = &spriteConfig[actor->sprite];  
+  gfx_bitBlt(work, s->x, s->y[actor->spriteIndex], actor->x, actor->y, s->width, s->height, spriteFrameBuffer);
+}
+
 
 static void 
 initRender()
 {
   for (int sprite = 0; spriteConfig[sprite].count != 0; sprite++) {
     for (int index = 0; index < spriteConfig[sprite].count; index++) {
-      transferSprite(sprite, index);
+      //     transferSprite(sprite, index);
+      spriteConfig[sprite].y[index] = spriteConfig[sprite].height * index;
     }
   }
 
@@ -372,7 +383,14 @@ initRender()
   gfx_fillRect(work, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, 0);
   gfx_drawStringRetro(work, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
 
-  gfx_bitBlt(work, 55, 0, 30, 100, 22, 16, spriteFrameBuffer);
+  //  gfx_bitBlt(work, 0, 0, 8, 100, 12, 8, spriteFrameBuffer);
+
+  for (uint16 x = 0; x < 32; x++) {
+    //    gfx_bitBlt(work, 0, 0, x, x*8, 12, 8, spriteFrameBuffer);
+  }
+  
+  
+  renderActor(&demoInvaders[0]);
 
 }
 
@@ -540,18 +558,6 @@ renderGameOver()
 }
 
 
-static void
-renderActor(actor_t* actor)
-{
-  sprite_t *s = &spriteConfig[actor->sprite];
-  
-  int sx = 0;
-  for (int i = 0; i < actor->sprite; i++) {
-    sx += spriteConfig[i].width;
-  }
-  int sy = s->height*actor->spriteIndex;
-  gfx_bitBlt(work, sx, sy, actor->x, actor->y, s->width, s->height, spriteFrameBuffer);
-}
 
 
 //static 
@@ -681,24 +687,29 @@ static void
 renderGameScreen()
 {
   if (screenDirty) {
-    gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
+    //    gfx_fillRect(work, 0, SCOREBOARD_HEIGHT, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT-SCOREBOARD_HEIGHT, 0);
   }
 
-  renderScores(0);
+  //  renderScores(0);
 
-  renderGameOver();
+  //  renderGameOver();
 
-  renderDefender();
+  custom->color[0] = 0xf00;
+  for (volatile uint8 i = 0; i < 16; i++) {
+    renderDefender();
+  }
+  custom->color[0] = 0x000;
+  //  renderBases();
 
-  renderBases();
 
-  renderInvaders();
+  //  renderInvaders();
 
-  renderBombs();
 
-  renderMissile();
+  //  renderBombs();
 
-  renderStatusBar(1);
+  //  renderMissile();
+
+  //  renderStatusBar(1);
 
   screenDirty = 0;
 }
@@ -1163,25 +1174,25 @@ gameLoop(unsigned time, int key)
     }
 
 
-    dropBombs();
+    //dropBombs();
     
-    moveDefender();
-    moveInvaders(time);
-    moveMissile();
-    moveBombs();
+    //moveDefender();
+    //moveInvaders(time);
+    //moveMissile();
+    //moveBombs();
     
 
 
-    invaderBaseCollision();
-    missileCollision();
-    bombCollision();
-    bombBasesCollision();     
+    //    invaderBaseCollision();
+    //missileCollision();
+    //bombCollision();
+    //bombBasesCollision();     
 
   }
 
-  if (screenDirty) {
+  //if (screenDirty) {
     renderGameScreen();
-  }     
+    //}     
   if (frame % 20 == 0) {
     renderTime = time-lastTime;      
   }

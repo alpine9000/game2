@@ -15,5 +15,7 @@ void
 gfx_drawPixel(volatile uint8* fb, int16 x, int16 y, uint16 color) ;
 void
 gfx_bitBlt(volatile uint8* source, int16 sx, int16 sy, int16 dx, int16 dy, int16 w, int16 h, volatile uint8* dest);
+void 
+gfx_init();
 #endif
 

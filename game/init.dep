@@ -1,1 +1,1 @@
-init.o: init.c game.h
+init.o: init.c game.h gfx.h

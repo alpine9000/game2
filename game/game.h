@@ -38,4 +38,6 @@ extern void SetupPalette();
 extern void SpaceInvadersInit();
 extern void SpaceInvadersLoop();
 extern void PokeCopperList(volatile uint32 bitplanesPtr);
+extern void WaitBlitter();
+
 #endif /* __GAME_H */

@@ -1,18 +1,11 @@
 #include "game.h"
 #include "gfx.h"
+#include <hardware/blit.h>
 
 extern  unsigned char  font[];
 
 #define printf(...)
 #define dprintf(...)
-
-/*
-    x = 4, y = 29
-     4 33
-00000000 00000000 00000000 00000000 00000000 
-    ^^^^ ^^^^^^^^ ^^^^^^^^ ^^^^^^^^ ^
-*/
-
 
 void
 gfx_fillRect(volatile uint8* fb, uint16 x, uint16 y, uint16 w, uint16 h, uint16 color)
@@ -153,20 +146,61 @@ gfx_drawLine(volatile uint8* fb, int16 x0, int16 y0, int16 x1, int16 y1, uint16 
 
 /*
 
-sx = 4, 5/8 = 0, 4
-dx = 9, 9/8 = 1, 1 1-4 = -3
-w = 17
+  11111111 11110000 00000000 00000000 00000000
 
-00001234 56789abc defgh000 00000000 00000000 
-^
+  00000000 11111111 11000 00000000 00000000
 
-00000000 01234567 89abcdef gh000000 00000000 
-         ^
+
+  dx = 8
+  sx = 0
+  w  = 12
+  widthWords = 2;
+  int16 shift = (dx&0xf)-(sx&0xf) = 
 */
 
+static uint16 dyOffsetsLUT[SCREEN_HEIGHT];
+static uint16 widthWordsLUT[32];
+
+void 
+gfx_init()
+{
+  for (uint16 y = 0; y < SCREEN_HEIGHT; y++) {
+    dyOffsetsLUT[y] = (y * SCREEN_WIDTH_BYTES);
+  }
+
+  WaitBlitter();
+  custom->bltafwm = 0xffff;
+  custom->bltalwm = 0x0000;
+}
 
 void
 gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w, int16 h, volatile uint8* source)
+{
+  uint16 widthWords =  ((w+8)>>4)+1;
+  int16 shift = (dx&0xf);
+
+  dest += dyOffsetsLUT[dy] + (dx>>3);
+  source += dyOffsetsLUT[sy] + (sx>>3);
+
+  WaitBlitter();
+
+  custom->bltcon0 = (SRCA|SRCB|SRCC|DEST|0xca|shift<<ASHIFTSHIFT);
+  custom->bltcon1 = shift<<BSHIFTSHIFT;
+  //  custom->bltafwm = 0xffff;
+  //custom->bltalwm = 0x0000;
+  custom->bltamod = SCREEN_WIDTH_BYTES-(widthWords<<1);
+  custom->bltbmod = SCREEN_WIDTH_BYTES-(widthWords<<1);
+  custom->bltcmod = SCREEN_WIDTH_BYTES-(widthWords<<1);
+  custom->bltdmod = SCREEN_WIDTH_BYTES-(widthWords<<1);
+  custom->bltapt = source;
+  custom->bltbpt = source;
+  custom->bltcpt = dest;
+  custom->bltdpt = dest;
+  custom->bltsize = h<<6 | widthWords;
+}
+
+void
+_gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w, int16 h, volatile uint8* source)
 {
   static uint8 bitPatterns[] = { 0xff, 0x7f, 0x3f, 0x1f, 0xf, 0x7, 0x3, 0x1};
   static uint8 endBitPatterns[] = { 0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff};
@@ -204,5 +238,3 @@ gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w
     source += SCREEN_WIDTH_BYTES-widthBytes;
   }
 }
-
-

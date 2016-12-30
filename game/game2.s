@@ -6,11 +6,11 @@ SCREEN_BIT_DEPTH=1
 	
 	xdef _custom
 	xdef _bitplanes
-	xdef _bitplanes2	
 	xdef _spriteBitplanes
 	xdef _verticalBlankCount
 	xdef _bitplanes
 	xdef _copper
+	xdef _WaitBlitter
 	
 	if TRACKLOADER=1
 byteMap:
@@ -30,12 +30,13 @@ Entry:
 Main:
 	jsr	_Init
 	jsr	_SetupScreen
-	jsr	_MusicInit
+	;; jsr	_MusicInit
+	jsr	_SpaceInvadersInit
 	
 GameLoop:	
 	jsr	WaitVerticalBlank
 	jsr	ReadJoystick
-	jsr	_SpaceInvadersLoop 
+	jsr	_SpaceInvadersLoop
 	if TRACKLOADER=0
 	btst	#6,$bfe001  	; test LEFT mouse click
 	bne 	GameLoop
@@ -49,6 +50,17 @@ QuitGame:
 	jmp	LongJump
 	endif
 
+
+_WaitBlitter:
+	move.l	a6,-(sp)
+	lea 	CUSTOM,a6
+	tst 	DMACONR(a6)		;for compatibility
+.waitblit:
+	btst 	#6,DMACONR(a6)
+	bne.s 	.waitblit
+	move.l	(sp)+,a6
+	rts
+	
 	include "os.i"
 
 	align 4
@@ -106,10 +118,9 @@ _map:
 bitplanes:
 _bitplanes:
 	dcb.b	SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT,0
-_bitplanes2:
-	dcb.b	SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT,0	
 _spriteBitplanes:
-	dcb.b	SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT,0
+	incbin	"out/sprite.bin"
+	;; dcb.b	SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT,0
 
 	if 0
 tileset:

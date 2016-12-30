@@ -1,5 +1,5 @@
 #include "game.h"
-
+#include "gfx.h"
 
 void
 Init()
@@ -23,6 +23,6 @@ Init()
   verticalBlankCount = 0;
 
   InitInterrupts();
-
-  SpaceInvadersInit();
+  
+  gfx_init();
 }
