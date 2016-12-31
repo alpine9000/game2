@@ -6,7 +6,7 @@ USERSTACK_ADDRESS=7fffc
 BASE_ADDRESS=4000
 # note: this must be high enough not to conflict with MFMbufE
 BOOTBLOCK_ASM=alpine_bootblock.s
-SRCS=hw_asm.s audio.c glcdfont.c si.c gfx.c disk.s trackloader.s init.c screen.c ptplayer.s mt_music_asm.s # music.s P6112-Play.s #sprite_rgba.c
+SRCS=hw_asm.s audio.c glcdfont.c si.c gfx.c trackloader.s init.c screen.c
 P61_MUSIC=0
 
 IMAGES=sprite.png

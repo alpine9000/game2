@@ -38,7 +38,6 @@ Entry:
 Main:
 	jsr	_init_amiga
 	jsr	_screen_setup
-	;; jsr	_MusicInit
 	jsr	_si_init
 	
 GameLoop:	
@@ -54,7 +53,6 @@ GameLoop:
 
 	if TRACKLOADER=0
 QuitGame:
-	jsr	_MusicStop
 	jmp	LongJump
 	endif
 
