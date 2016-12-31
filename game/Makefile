@@ -6,12 +6,12 @@ USERSTACK_ADDRESS=7fffc
 BASE_ADDRESS=4000
 # note: this must be high enough not to conflict with MFMbufE
 BOOTBLOCK_ASM=alpine_bootblock.s
-SRCS=hw_asm.s glcdfont.c si.c gfx.c disk.s trackloader.s init.c screen.c ptplayer.s mt_music_asm.s # music.s P6112-Play.s #sprite_rgba.c
+SRCS=hw_asm.s audio.c glcdfont.c si.c gfx.c disk.s trackloader.s init.c screen.c ptplayer.s mt_music_asm.s # music.s P6112-Play.s #sprite_rgba.c
 P61_MUSIC=0
 
 IMAGES=sprite.png
 IMAGEDATA=$(addprefix out/, $(IMAGES:.png=.bin))
-ASSETS=$(IMAGEDATA) 
+ASSETS=$(IMAGEDATA) out/invaderkilled.raw out/explosion.raw out/shoot.raw out/beat1.raw out/beat2.raw out/beat3.raw out/beat4.raw
 
 MAX_P61_SIZE=$(shell ls -Sl assets/P61.* | awk '{print $$5}' | head -1)
 
@@ -72,6 +72,21 @@ wb: bin/$(GAME_NAME)
 
 out/sprite.bin: assets/sprite.png
 	$(IMAGECON) --quantize --colors=2 --full-color-palette --use-palette=palette.pal --input=assets/sprite.png --output=out/sprite --output-bitplanes --output-png --output-palette
+
+out/invaderkilled.raw: assets/invaderkilled.wav
+	sox -v 0.05 $<  -b 8 -c 1 -r 11025 $@	
+out/explosion.raw: assets/explosion.wav
+	sox -v 0.05 $<  -b 8 -c 1 -r 11025 $@	
+out/shoot.raw: assets/shoot.wav
+	sox -v 0.05 $<  -b 8 -c 1 -r 11025 $@	
+out/beat1.raw: assets/fastinvader1.wav
+	sox -v 0.05 $<  -b 8 -c 1 -r 11025 $@
+out/beat2.raw: assets/fastinvader2.wav
+	sox -v 0.05 $<  -b 8 -c 1 -r 11025 $@
+out/beat3.raw: assets/fastinvader3.wav
+	sox -v 0.05 $<  -b 8 -c 1 -r 11025 $@
+out/beat4.raw: assets/fastinvader4.wav
+	sox -v 0.05 $<  -b 8 -c 1 -r 11025 $@
 
 out/bootblock.bin: out/bootblock.o
 	vlink -brawbin1 $< -o $@

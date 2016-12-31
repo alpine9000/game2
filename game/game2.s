@@ -11,6 +11,14 @@ SCREEN_BIT_DEPTH=1
 	xdef _bitplanes
 	xdef _copper
 
+	xdef _audio_beat1
+	xdef _audio_beat2
+	xdef _audio_beat3
+	xdef _audio_beat4
+	xdef _audio_shoot
+	xdef _audio_invaderkilled
+	xdef _audio_explosion
+	
 	
 	if TRACKLOADER=1
 byteMap:
@@ -99,11 +107,6 @@ copper:
 	dc.w    COLOR01,$fff
 	dc.l	$fffffffe
 
-	if 0
-_map:
-	include "out/map-map.s"
-	endif
-
 	align 4
 bitplanes:
 _bitplanes:
@@ -111,6 +114,22 @@ _bitplanes:
 _spriteBitplanes:
 	incbin	"out/sprite.bin"
 
+_audio_beat1:
+	incbin  "out/beat1.raw"
+_audio_beat2:
+	incbin  "out/beat2.raw"
+_audio_beat3:
+	incbin  "out/beat3.raw"
+_audio_beat4:
+	incbin  "out/beat4.raw"	
+_audio_shoot:	
+	incbin  "out/shoot.raw"
+_audio_explosion:
+	incbin  "out/explosion.raw"
+_audio_invaderkilled:
+	incbin  "out/invaderkilled.raw"
+	
+	align 4
 _custom:
 	dc.l	CUSTOM
 	

@@ -9,6 +9,7 @@
 	xdef _hw_joystickButton
 	xdef _hw_joystickPos	
 	xdef _hw_interruptsInit
+	xdef _hw_waitScanLines
 	
 ciaa_pra  = $bfe001
 _joy1dat   = $dff00c
@@ -65,6 +66,42 @@ _hw_waitRaster:		;wait for rasterline d0.w. Modifies d0-d2/a0.
 	movem.l (sp)+,d0-a6
 	rts
 
+WaitScanLines:	 macro
+	        if \1 != 0
+	        lea     $dff006,a0
+	        move.w  #\1-1,d2
+	.\@nTimes:
+	        move.w  (a0),d0
+	        lsr.w   #8,d0
+	.\@loop:
+	        move.w  (a0),d1
+	        lsr.w   #8,d1
+	        cmp.w   d0,d1
+	        beq     .\@loop
+	        dbra    d2,.\@nTimes
+	.\@done:
+	        endif
+	        endm
+	
+	
+_hw_waitScanLines:
+		move.l	(4,sp),d2
+		movem.l	d0-d2/a0,-(sp)
+	        lea     $dff006,a0
+	.nTimes:
+	        move.w  (a0),d0
+	        lsr.w   #8,d0
+	.loop:
+	        move.w  (a0),d1
+	        lsr.w   #8,d1
+	        cmp.w   d0,d1
+	        beq     .loop
+	        dbra    d2,.nTimes
+	.done:
+		movem.l	(sp)+,d0-d2/a0
+	rts
+	
+	
 _hw_readJoystick:
 	;; d0 - returns the state of the buttons in bits 8 and 9, and the lower byte holds the direction of the stick:
 	btst    #bit_joyb2&7,potgor

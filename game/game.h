@@ -36,5 +36,6 @@ extern unsigned long verticalBlankCount;
 #include "init.h"
 #include "screen.h"
 #include "gfx.h"
+#include "audio.h"
 
 #endif /* __GAME_H */

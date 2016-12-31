@@ -11,16 +11,6 @@ typedef enum {
   DEAD = 0
 } actor_state_t;
 
-typedef enum {
-  AUDIO_CHANNEL_SHOOT = 0,
-  AUDIO_CHANNEL_INVADER1 = 1,
-  AUDIO_CHANNEL_INVADER2 = 2,
-  AUDIO_CHANNEL_INVADER3 = 3,
-  AUDIO_CHANNEL_INVADER4 = 4,
-  AUDIO_CHANNEL_KILLED = 5,
-  AUDIO_CHANNEL_EXPLOSION = 6
-} audio_channel_t;
-
 
 typedef enum {
   SCREEN_DEMO,
@@ -81,7 +71,7 @@ typedef struct {
 #define DEFENDER_EXPLOSION_FRAMES 50
 #define DEFENDER_EXPLOSION_FRAMERATE 10
 #define DEMO_FRAME_TIME 1
-#define PLAYER_TURN_MESSAGE_TIME 100
+#define PLAYER_TURN_MESSAGE_TIME 1
 #define SCORE_FLICKER_TIME 1
 
 
@@ -441,47 +431,6 @@ initRender()
 }
 
 
-static void 
-initAudio()
-{
-#if 0
-  audio_selectChannel(AUDIO_CHANNEL_SHOOT);
-  audio_setType(AUDIO_TYPE_BUFFER);
-  audio_setAddress((unsigned*)&shoot_wav);
-  audio_setLength(shoot_wav_length);
-
-  audio_selectChannel(AUDIO_CHANNEL_INVADER1);
-  audio_setType(AUDIO_TYPE_BUFFER);
-  audio_setAddress((unsigned*)&fastinvader1_wav);
-  audio_setLength(fastinvader1_wav_length);
-
-  audio_selectChannel(2);
-  audio_setType(AUDIO_TYPE_BUFFER);
-  audio_setAddress((unsigned*)&fastinvader2_wav);
-  audio_setLength(fastinvader2_wav_length);
-
-  audio_selectChannel(3);
-  audio_setType(AUDIO_TYPE_BUFFER);
-  audio_setAddress((unsigned*)&fastinvader3_wav);
-  audio_setLength(fastinvader3_wav_length);
-
-  audio_selectChannel(4);
-  audio_setType(AUDIO_TYPE_BUFFER);
-  audio_setAddress((unsigned*)&fastinvader4_wav);
-  audio_setLength(fastinvader4_wav_length);
-
-  audio_selectChannel(AUDIO_CHANNEL_KILLED);
-  audio_setType(AUDIO_TYPE_BUFFER);
-  audio_setAddress((unsigned*)&invaderkilled_wav);
-  audio_setLength(invaderkilled_wav_length);
-
-  audio_selectChannel(AUDIO_CHANNEL_EXPLOSION);
-  audio_setType(AUDIO_TYPE_BUFFER);
-  audio_setAddress((unsigned*)&explosion_wav);
-  audio_setLength(explosion_wav_length);
-#endif
-}
-
 
 static 
 void 
@@ -568,22 +517,31 @@ dropBombs()
   }
 }
 
+static void
+playBeat(int time)
+{
+  static int beat = 0;
+  static int last = 0;
+  static int beatSpeed = 50;
+
+  if (time-last > beatSpeed) {
+    audio_playBeat(beat++);
+    if (beat == 4) {
+      beat = 0;
+    }
+    last = time;
+  }
+}
 
 static 
 void
 moveInvaders(int time) 
 {
   static int last = 0;
-  static unsigned beats[] = {AUDIO_CHANNEL_INVADER1, AUDIO_CHANNEL_INVADER2, AUDIO_CHANNEL_INVADER3, AUDIO_CHANNEL_INVADER4};
-  static unsigned char beatIndex = 0;
   static int index = 0;
 
   if (time-last > invaderSpeed) {
     last = time;
-    //   audio_execute(beats[beatIndex++]);
-    if (beatIndex > 3) {
-      beatIndex = 0;
-    }
 
     for (int i = 0; i < 4; i++) {
       actor_t *inv = &invaders[index];
@@ -768,7 +726,7 @@ renderBombs()
 static void 
 renderGameScreen()
 {
-  custom->color[0] = 0xf00;
+  //  custom->color[0] = 0xf00;
 
   renderScores(0);
 
@@ -786,7 +744,7 @@ renderGameScreen()
   
   renderStatusBar(1);
 
-  custom->color[0] = 0x000;
+  //  custom->color[0] = 0x000;
 }
 
 
@@ -1084,7 +1042,7 @@ bombCollision()
 	defender.data = 0;
 	defender.spriteIndex = 1;
 	killActor(&bombs[i]);
-	//audio_execute(AUDIO_CHANNEL_EXPLOSION);
+	audio_playExplosion();
 	break;
       }
     }
@@ -1110,7 +1068,7 @@ missileCollision()
 	  inv->x + INVADER_WIDTH > missile.x &&
 	  inv->y < missile.y + MISSILE_HEIGHT &&
 	  INVADER_HEIGHT + inv->y > missile.y) {
-	//audio_execute(AUDIO_CHANNEL_KILLED);
+	audio_playInvaderKilled();
 	inv->_state = EXPLODING;
 	inv->spriteIndex = 2;
 	forceRenderActor(inv);
@@ -1174,7 +1132,7 @@ shootMissile()
     missile.y = defender.y-spriteConfig[missile.sprite].height;
     missile.spriteIndex = 0;
     missile._state = ALIVE;
-    //   audio_execute(AUDIO_CHANNEL_SHOOT);      
+    audio_playShoot();
   }
 }
 
@@ -1198,7 +1156,6 @@ init()
   spriteFrameBuffer = (uint8*)&spriteBitplanes;
 
   initInvaders();
-  initAudio();
   initRender();
 }
 
@@ -1224,8 +1181,10 @@ gameLoop(unsigned time, int key)
   }
 
   renderGameScreen();
-  
-if (frame % 20 == 0) {
+
+  playBeat(time);
+
+  if (frame % 20 == 0) {
     renderTime = time-lastTime;      
   }
   lastTime = time;
@@ -1275,6 +1234,8 @@ void
 si_loop()
 {
   USE(lastTime);
+
+  audio_vbl();
 
   //peripheral.simulator.startStopWatch = 1;
   
