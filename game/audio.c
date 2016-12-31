@@ -39,6 +39,9 @@ audio_playInvaderKilled(void)
 void 
 audio_playExplosion(void)
 {
+  custom->dmacon = DMAF_AUD0|DMAF_AUD1|DMAF_AUD2|DMAF_AUD3;
+  audio_vbl();
+  hw_waitScanLines(4);
   struct  AudChannel *aud = &custom->aud[2];
   aud->ac_ptr = &audio_explosion;
   aud->ac_per = 322;
@@ -56,6 +59,7 @@ audio_vbl()
   for (int i = 0; i < 4; i++) {
     struct AudChannel *aud = &custom->aud[i];    
     aud->ac_len = 2;
+    //    aud->ac_per = 1;
     aud->ac_ptr = &empty[0];
   }
 }
