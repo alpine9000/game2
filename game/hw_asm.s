@@ -137,11 +137,13 @@ _hw_waitForJoystick:
 	rts
 	
 _hw_interruptsInit:
-	movem.l	a0/a3,-(sp)
+	movem.l	a0/a3/a6,-(sp)
+	lea	CUSTOM,a6	
 	lea	Level3InterruptHandler,a3
 	move.l	vectorBase,a0
  	move.l	a3,LVL3_INT_VECTOR(a0)
-	movem.l	(sp)+,a0/a3
+	move.w	#(INTF_SETCLR|INTF_VERTB|INTF_INTEN),INTENA(a6)
+	movem.l	(sp)+,a0/a3/a6
 	rts
 
 Level3InterruptHandler:

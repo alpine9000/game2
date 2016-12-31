@@ -41,7 +41,7 @@ screen_setup(void)
   custom->cop1lc = (uint32)&copper;
   scratch = custom->copjmp1;
   custom->dmacon = (DMAF_BLITTER|DMAF_SETCLR|DMAF_COPPER|DMAF_RASTER|DMAF_MASTER);
-  custom->intena = (INTF_SETCLR|INTF_VERTB|INTF_INTEN);
+  //  custom->intena = (INTF_SETCLR|INTF_VERTB|INTF_INTEN);
 
 }
 

@@ -41,7 +41,7 @@ Main:
 	jsr	_si_init
 	
 GameLoop:	
-	jsr	_hw_waitVerticalBlank
+	;; jsr	_hw_waitVerticalBlank
 	jsr	_hw_readJoystick
 	jsr	_si_loop
 	if TRACKLOADER=0

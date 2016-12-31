@@ -11,7 +11,6 @@ typedef enum {
   DEAD = 0
 } actor_state_t;
 
-
 typedef enum {
   SCREEN_DEMO,
   SCREEN_START,
@@ -27,7 +26,6 @@ typedef struct {
   int count;
   int y[SPRITE_MAX_SPRITES];
 } sprite_t;
-
 
 typedef struct {
   int x;
@@ -46,7 +44,6 @@ typedef struct {
   int column;
   int direction;
 } invader_data_t;
-
 
 typedef struct {
   char* text;
@@ -72,9 +69,8 @@ typedef struct {
 #define DEFENDER_EXPLOSION_FRAMES 50
 #define DEFENDER_EXPLOSION_FRAMERATE 10
 #define DEMO_FRAME_TIME 1
-#define PLAYER_TURN_MESSAGE_TIME 1
+#define PLAYER_TURN_MESSAGE_TIME 100
 #define SCORE_FLICKER_TIME 1
-
 
 #define SCOREBOARD_HEIGHT 32
 #define MISSILE_WIDTH 1
@@ -152,6 +148,7 @@ typedef enum {
 
 
 static actor_t invaders[NUM_INVADER_COLUMNS*NUM_INVADER_ROWS];
+
 static invader_data_t invaderData[NUM_INVADER_COLUMNS*NUM_INVADER_ROWS];
 
 static actor_t bombs[MAX_BOMBS] = {0};
@@ -297,64 +294,6 @@ dropBomb(int index, int x, int y)
 }
 
 
-static void 
-drawSpriteRGBA(uint16 x, uint16 y, unsigned *ptr)
-{
-  unsigned data = (unsigned)(*ptr);
-  unsigned char alpha = (data & 0xFF);
-  data = (data >> 8) | alpha << 24;
-  gfx_drawPixel(spriteFrameBuffer, x, y, data);
-}
-
-
-static void
-putSpritePixelRGBA(int sprite, int index, int x, int y, unsigned pixel)
-{
-#if 0
-  unsigned *ptr = (unsigned*) &sprite_rgba;
-  sprite_t* sp = &spriteConfig[sprite];
-  int sy = sp->height*index;  
-  int sx = 0;
-  
-  if (x < 0 || y < 0) {
-    return;
-  }
-    
-  for (int i = 0; i < sprite; i++) {
-    sx += spriteConfig[i].width;
-  }
-  
-  unsigned* dp = ptr + ((sy+y)*SPRITEMAP_WIDTH) + (sx+x);
-  *dp = pixel;
-#endif
-}
-
-
-static unsigned
-getSpritePixelRGBA(int sprite, int index, int x, int y)
-{
-#if 0
-  sprite_t* sp = &spriteConfig[sprite];
-
-  if (!(x >= 0 && x < sp->width && y >= 0 && y < sp->height)) {
-    return 0;
-  }
-
-  unsigned *ptr = (unsigned*) &sprite_rgba;
-  int sy = sp->height*index;  
-  int sx = 0;
-
-  for (int i = 0; i < sprite; i++) {
-    sx += spriteConfig[i].width;
-  }
-  
-  unsigned* dp = ptr + ((sy+y)*SPRITEMAP_WIDTH) + (sx+x);
-  return *dp;
-#endif
-  return 0;
-}
-
-
 static void
 forceRenderActor(actor_t* actor)
 {
@@ -415,7 +354,6 @@ initRender()
   gfx_fillRect(frameBuffer, 0, 0, INVADER_SCREEN_WIDTH, INVADER_SCREEN_HEIGHT, 0);
   gfx_drawStringRetro(frameBuffer, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
 }
-
 
 
 static void 
@@ -484,6 +422,7 @@ moveBombs()
   }
 }
 
+
 static void
 dropBombs()
 {
@@ -502,6 +441,7 @@ dropBombs()
   }
 }
 
+
 static void
 playBeat(int time)
 {
@@ -517,6 +457,7 @@ playBeat(int time)
     last = time;
   }
 }
+
 
 static void
 moveInvaders(int time) 
@@ -567,9 +508,8 @@ moveInvaders(int time)
   } else {
     dropBombs();
   }
-
-
 }
+
 
 static void
 renderGameOver()
@@ -585,6 +525,7 @@ renderGameOver()
     setCurrentScreen(SCREEN_DEMO);
   }
 }
+
 
 static void
 renderBases()
@@ -712,8 +653,6 @@ renderBombs()
 static void 
 renderGameScreen()
 {
-  //custom->color[0] = 0xf00;
-
   renderScores(0);
 
   renderDefender();
@@ -723,8 +662,6 @@ renderGameScreen()
   renderBombs();
   
   renderMissile();
-
-  //custom->color[0] = 0x000;
 }
 
 
@@ -752,6 +689,7 @@ renderStartScreen()
   }
 
 }
+
 
 static void
 renderPlayer1TurnMessageScreen(int time)
@@ -894,18 +832,16 @@ renderDemoScreen(int time)
 }
 
 
-
 static void
 explodeBase(int baseIndex, int explosionIndex, int x, int y)
 {
-  int baseX = bases[baseIndex].x;
-  int baseY = bases[baseIndex].y;
   int i;
 
   for (i = 0; baseExplosion[explosionIndex][i].x != 0 || baseExplosion[explosionIndex][i].y != 0; i++) {
-    putSpritePixelRGBA(SPRITE_BASE, baseIndex, (x+baseExplosion[explosionIndex][i].x-baseX), (y+baseExplosion[explosionIndex][i].y-baseY), RGBA_COLOR_BACKGROUND);
+    gfx_drawPixel(frameBuffer, x+baseExplosion[explosionIndex][i].x, y+baseExplosion[explosionIndex][i].y, 0);
   }
-  putSpritePixelRGBA(SPRITE_BASE, baseIndex, (x+baseExplosion[explosionIndex][i].x-baseX), (y+baseExplosion[explosionIndex][i].y-baseY), RGBA_COLOR_BACKGROUND);
+  
+  gfx_drawPixel(frameBuffer, x+baseExplosion[explosionIndex][i].x, y+baseExplosion[explosionIndex][i].y, 0);
 }
 
 
@@ -918,9 +854,11 @@ actorCollision(actor_t* a, int aw, int ah, actor_t* b, int bw, int bh)
 	  ah + a->y > b->y);
 }
 
+
 static void
 invaderBaseCollision()
 {
+#if 0
   int dirtyBases[NUM_BASES] = {0};
   for (int c = 0; c < NUM_INVADER_COLUMNS; c++) {
     actor_t *inv = findBottomInvaderForColumn(c);
@@ -946,29 +884,30 @@ invaderBaseCollision()
       //     transferSprite(bases[i].sprite, bases[i].spriteIndex);
     }
   }
-
+#endif
 }
+
 
 static int
 missileBaseCollision()
 {
-#if 0
   #define numOffsets 3
   int xOffsets[numOffsets] = {0, 1, -1};
 
-  for (int y = MISSILE_SPEED; y >= 0; y--) {
+  for (int y = MISSILE_SPEED; y > 0; y--) {
     for (int x = 0; x < numOffsets; x++) {
       for (int i = 0; i < NUM_BASES; i++) {
-	unsigned pixel = getSpritePixelRGBA(bases[i].sprite, bases[i].spriteIndex, missile.x-bases[i].x+xOffsets[x], missile.y-bases[i].y+y);
-	if (pixel != RGBA_COLOR_BACKGROUND && pixel != 0) {
-	  killActor(&missile);
-	  explodeBase(i, 0, missile.x+xOffsets[x], missile.y+y);
-	  return 1;
+	if (actorCollision(&missile, MISSILE_WIDTH, MISSILE_HEIGHT, &bases[i], BASE_WIDTH, BASE_HEIGHT)) {	  
+	    if (gfx_getPixel(frameBuffer, missile.x+xOffsets[x], missile.y+y-1)) {
+	    killActor(&missile);
+	    explodeBase(i, 0, missile.x+xOffsets[x], missile.y+y);
+	    return 1;
+	  }
 	}
       }
     }
   }
-#endif
+
   return 0;
 }
 
@@ -984,11 +923,14 @@ bombBaseCollision(int bombIndex)
   for (int y = BOMB_SPEED; y >= 0; y--) {
     for (int x = 0; x < numOffsets; x++) {
       for (int i = 0; i < NUM_BASES; i++) {
-	unsigned pixel = getSpritePixelRGBA(bases[i].sprite, bases[i].spriteIndex, b->x-bases[i].x+xOffsets[x], bombY-bases[i].y+y);
-	if (pixel != RGBA_COLOR_BACKGROUND && pixel != 0) {
-	  killActor(b);
-	  explodeBase(i, 1, b->x+xOffsets[x], bombY+y-1);
-	  return 1;
+	if (actorCollision(b, BOMB_WIDTH, BOMB_HEIGHT, &bases[i], BASE_WIDTH, BASE_HEIGHT)) {	  
+	  //	unsigned pixel = getSpritePixelRGBA(bases[i].sprite, bases[i].spriteIndex, b->x-bases[i].x+xOffsets[x], bombY-bases[i].y+y);
+	  //if (pixel != RGBA_COLOR_BACKGROUND && pixel != 0) {
+	  if (gfx_getPixel(frameBuffer, b->x+xOffsets[x], b->y+BOMB_HEIGHT)) {
+	    killActor(b);
+	    explodeBase(i, 1, b->x+xOffsets[x], bombY+y-2);
+	    return 1;
+	  }
 	}
       }
     }
@@ -1129,9 +1071,12 @@ init()
   initRender();
 }
 
+
 static void
 gameLoop(unsigned time)
 {
+  // custom->color[0] = 0xf00;
+
   if (numDefenders > 0) {
     if (hw_joystickButton & 0x1) {
       shootMissile();
@@ -1142,15 +1087,14 @@ gameLoop(unsigned time)
     moveMissile();
     moveBombs();
 
-
-    //    invaderBaseCollision();
+    //invaderBaseCollision();
     missileCollision();
     bombCollision();
-    //bombBasesCollision();     
+    bombBasesCollision();     
 
-    renderGameScreen();
-    
     playBeat(time);
+    hw_waitVerticalBlank();
+    renderGameScreen();
     
     if (frame % 20 == 0) {
       renderTime = time-lastTime;      
@@ -1161,13 +1105,17 @@ gameLoop(unsigned time)
   } else {
     setCurrentScreen(SCREEN_GAMEOVER);
   }
+
+  //  custom->color[0] = 0x000;
 }
+
 
 static void
 startLoop(int time)
 {
   renderStartScreen();
 }
+
 
 static void
 initNewGame(void)
@@ -1189,9 +1137,11 @@ initNewGame(void)
   renderStatusBar(1, 1);
 }
 
+
 static void
 playerTurnMessageLoop(int time) 
 {
+  hw_waitVerticalBlank();  
   if (time - playerTurnMessageTime > PLAYER_TURN_MESSAGE_TIME) {
     initNewGame();
   } else {
@@ -1199,17 +1149,21 @@ playerTurnMessageLoop(int time)
   }
 }
 
+
 static void
 demoLoop(int time)
 {
+  hw_waitVerticalBlank();  
   renderDemoScreen(time);
 }
+
 
 void
 si_init()
 {
   init();
 }
+
 
 void
 si_loop()

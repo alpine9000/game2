@@ -79,6 +79,24 @@ gfx_fillRect(volatile uint8* fb, uint16 x, uint16 y, uint16 w, uint16 h, uint16 
 
 }
 
+/*
+
+    00000000 00000000 00000000
+
+  0 00000000
+  1 01000000
+  2 00200000
+  4 00004000
+  7 00000007
+
+*/
+
+uint8
+gfx_getPixel(volatile uint8* fb, int16 x, int16 y) 
+{
+  fb += (y*SCREEN_WIDTH_BYTES) + (x >> 3);
+  return *fb & (0x80 >> (x & 0x7));
+}
 
 void
 gfx_drawPixel(volatile uint8* fb, int16 x, int16 y, uint16 color) 
