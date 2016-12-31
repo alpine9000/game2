@@ -47,6 +47,7 @@ typedef struct {
   void* data;
   int lastX;
   int lastY;
+  actor_state_t lastSpriteIndex;
 } actor_t;
 
 typedef struct {
@@ -77,7 +78,7 @@ typedef struct {
 #define MISSILE_SPEED 4
 #define BOMB_SPEED 1
 #define BOMB_DROP_FRAMES 1
-#define DEFENDER_EXPLOSION_FRAMES 1
+#define DEFENDER_EXPLOSION_FRAMES 50
 #define DEFENDER_EXPLOSION_FRAMERATE 10
 #define DEMO_FRAME_TIME 1
 #define PLAYER_TURN_MESSAGE_TIME 100
@@ -164,27 +165,27 @@ static invader_data_t invaderData[NUM_INVADER_COLUMNS*NUM_INVADER_ROWS];
 
 static actor_t bombs[MAX_BOMBS] = {0};
 
-static actor_t missile = {0, 0, SPRITE_DEFENDER_MISSILE, 0, DEAD, 0};
+static actor_t missile = {0, 0, SPRITE_DEFENDER_MISSILE, 0, DEAD, 0, -1, -1, 0};
 
-static actor_t defender = {0, DEFENDER_Y, SPRITE_DEFENDER, 0, ALIVE, 0};
+static actor_t defender = {0, DEFENDER_Y, SPRITE_DEFENDER, 0, ALIVE, 0, -1, -1, 0};
 
 static actor_t demoInvaders[NUM_DEMO_INVADERS] = {
-  {64, 137, SPRITE_MYSTERY_INVADER, 0, ALIVE, 0, 0, 0},
-  {66, 152, SPRITE_INVADER3, 1, ALIVE, 0, 0, 0},
-  {66, 168, SPRITE_INVADER1, 0, ALIVE, 0, 0, 0},
-  {66, 184, SPRITE_INVADER2, 1, ALIVE, 0, 0, 0}
+  {64, 137, SPRITE_MYSTERY_INVADER, 0, ALIVE, 0, -1, -1, 0},
+  {66, 152, SPRITE_INVADER3, 1, ALIVE, 0, -1, -1, 0},
+  {66, 168, SPRITE_INVADER1, 0, ALIVE, 0, -1, -1, 0},
+  {66, 184, SPRITE_INVADER2, 1, ALIVE, 0, -1, -1, 0}
 };
 
 static actor_t spareDefenders[] = {
-  {26, 240, SPRITE_DEFENDER, 0, ALIVE, 0, 0, 0},
-  {42, 240, SPRITE_DEFENDER, 0, ALIVE, 0, 0, 0}
+  {26, 240, SPRITE_DEFENDER, 0, ALIVE, 0, -1, -1, 0},
+  {42, 240, SPRITE_DEFENDER, 0, ALIVE, 0, -1, -1, 0}
 };
 
 static actor_t bases[NUM_BASES] = {
-  {30, BASE_TOP, SPRITE_BASE, 0, ALIVE, 0, 0, 0},
-  {75, BASE_TOP, SPRITE_BASE, 1, ALIVE, 0, 0, 0},
-  {120, BASE_TOP, SPRITE_BASE, 2, ALIVE, 0, 0, 0},
-  {165, BASE_TOP, SPRITE_BASE, 3, ALIVE, 0, 0, 0}
+  {30, BASE_TOP, SPRITE_BASE, 0, ALIVE, 0, -1, -1, 0},
+  {75, BASE_TOP, SPRITE_BASE, 1, ALIVE, 0, -1, -1, 0},
+  {120, BASE_TOP, SPRITE_BASE, 2, ALIVE, 0, -1, -1, 0},
+  {165, BASE_TOP, SPRITE_BASE, 3, ALIVE, 0, -1, -1, 0}
 };
 
 typedef struct {
@@ -260,6 +261,7 @@ initInvader(int x, int y, int row, int column, unsigned sprite)
   i->lastY = -1;
   i->sprite = sprite;
   i->spriteIndex = 0;
+  i->lastSpriteIndex = 0;
   i->_state = ALIVE;
   invader_data_t* data = &invaderData[invaderIndex];
   data->row = row;
@@ -372,16 +374,28 @@ getSpritePixelRGBA(int sprite, int index, int x, int y)
 }
 
 static void
+forceRenderActor(actor_t* actor)
+{
+  sprite_t *s = &spriteConfig[actor->sprite];  
+  gfx_fillRect(work, actor->x, actor->y, s->width, s->height, 0);
+  gfx_bitBlt(work, s->x, s->y[actor->spriteIndex], actor->x, actor->y, s->width, s->height, spriteFrameBuffer);
+}
+
+
+static void
 renderActor(actor_t* actor)
 {
   sprite_t *s = &spriteConfig[actor->sprite];  
 
   if (actor->_state != DEAD) {
-    if (actor->x != actor->lastX || actor->y != actor->lastY) {
-      gfx_fillRect(work, actor->lastX, actor->lastY, s->width, s->height, 0);
+    if (actor->x != actor->lastX || actor->y != actor->lastY || actor->lastSpriteIndex != actor->spriteIndex) {
+      if (actor->lastX != -1) {
+	gfx_fillRect(work, actor->lastX, actor->lastY, s->width, s->height, 0);
+      }
       gfx_bitBlt(work, s->x, s->y[actor->spriteIndex], actor->x, actor->y, s->width, s->height, spriteFrameBuffer);
       actor->lastX = actor->x;
       actor->lastY = actor->y;
+      actor->lastSpriteIndex = actor->spriteIndex;
     } 
   }
 }
@@ -391,7 +405,9 @@ killActor(actor_t* actor)
 {
   sprite_t *s = &spriteConfig[actor->sprite];  
   actor->_state = DEAD;
-  gfx_fillRect(work, actor->lastX, actor->lastY, s->width, s->height, 0);
+  if (actor->lastX != -1) {
+    gfx_fillRect(work, actor->lastX, actor->lastY, s->width, s->height, 0);
+  }
 }
 
 
@@ -593,16 +609,24 @@ moveInvaders(int time)
 	  inv->spriteIndex = 3;
 	  break;
 	}
-      } else if (inv->_state == EXPLODING) {
-	killActor(inv);
       }
       if (++index == invaderIndex) {
 	index = 0;
       }
     }    
+
+    for (int i = 0; i < invaderIndex; i++) {
+      actor_t *inv = &invaders[i];
+      if (inv->_state == EXPLODING) {
+	killActor(inv);
+      }
+    }
+
   } else {
     dropBombs();
   }
+
+
 }
 
 static void
@@ -990,6 +1014,7 @@ invaderBaseCollision()
 static int
 missileBaseCollision()
 {
+#if 0
   #define numOffsets 3
   int xOffsets[numOffsets] = {0, 1, -1};
 
@@ -1005,7 +1030,7 @@ missileBaseCollision()
       }
     }
   }
-
+#endif
   return 0;
 }
 
@@ -1088,6 +1113,7 @@ missileCollision()
 	//audio_execute(AUDIO_CHANNEL_KILLED);
 	inv->_state = EXPLODING;
 	inv->spriteIndex = 2;
+	forceRenderActor(inv);
 	killActor(&missile);
 	score = score + killScores[((invader_data_t*)inv->data)->row];
 	if (score > hiscore) {
@@ -1184,18 +1210,15 @@ gameLoop(unsigned time, int key)
       shootMissile();
     }
 
-
-    
     moveDefender();
     moveInvaders(time);
     moveMissile();
     moveBombs();
-    
 
 
     //    invaderBaseCollision();
-    //missileCollision();
-    //bombCollision();
+    missileCollision();
+    bombCollision();
     //bombBasesCollision();     
 
   }
