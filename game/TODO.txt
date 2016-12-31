@@ -1,0 +1,1 @@
+o status bar line is one pixel too long

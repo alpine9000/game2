@@ -6,8 +6,10 @@
 #include <hardware/intbits.h>
 
 #define CUSTOM ((struct Custom*)0xdff000)
-#define SCREEN_WIDTH	   320
-#define SCREEN_HEIGHT	   272 /* vertical overscan */
+#define SCREEN_WIDTH 224
+#define SCREEN_HEIGHT 256
+//#define SCREEN_WIDTH	   320
+//#define SCREEN_HEIGHT	   272 /* vertical overscan */
 #define SCREEN_HEIGHT_WORDS SCREEN_HEIGHT/16
 #define SCREEN_WIDTH_BYTES (SCREEN_WIDTH/8)
 #define SCREEN_WIDTH_WORDS (SCREEN_WIDTH/16)

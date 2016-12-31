@@ -539,10 +539,11 @@ renderBases()
 static void
 renderStatusBar(int drawLine, int drawLives)
 {
+
   if (drawLine) {
-    gfx_drawLine(frameBuffer, 0, STATUS_LINE_Y, INVADER_SCREEN_WIDTH, STATUS_LINE_Y, COLOR_GREEN);
+    gfx_drawLine(frameBuffer, 0, STATUS_LINE_Y, INVADER_SCREEN_WIDTH-1, STATUS_LINE_Y, COLOR_GREEN);
   }
-  
+
   gfx_fillRect(frameBuffer, NUM_DEFENDERS_X, NUM_DEFENDERS_Y, gfx_retroFontWidth, gfx_retroFontHeight, 0);
   if (drawLives) {
     char buffer[2] = {'0' + numDefenders, 0};
