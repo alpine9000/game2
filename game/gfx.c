@@ -7,6 +7,17 @@
 static uint16 dyOffsetsLUT[SCREEN_HEIGHT];
 static uint16 bltcon0LUT[16];
 
+static __chip uint8 fontBuffer[SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT];
+
+typedef struct {
+  uint16 x;
+  uint16 y;
+} char_lookup_t;
+
+static char_lookup_t charAtlas[127];
+
+static void _gfx_renderCharRetro(volatile uint8* fb, int16 x, int16 y, char c, uint16 color);
+
 void 
 gfx_init()
 {
@@ -17,6 +28,18 @@ gfx_init()
   hw_waitBlitter();
 
   custom->bltafwm = 0xffff;
+
+  int x = 0, y = 0;
+  for (unsigned char c = 0; c < 127; c++) {
+    if (x+16 > SCREEN_WIDTH) {
+      x = 0;
+      y += 8;
+    }
+    charAtlas[c].x = x;
+    charAtlas[c].y = y;
+    _gfx_renderCharRetro(fontBuffer, x, y, c, 1);
+    x+=16;
+  }
 }
 
 void
@@ -109,8 +132,8 @@ gfx_drawPixel(volatile uint8* fb, int16 x, int16 y, uint16 color)
   }
 }
 
-void
-gfx_drawCharRetro(volatile uint8* fb, int16 x, int16 y, char c, uint16 color) 
+static void
+_gfx_renderCharRetro(volatile uint8* fb, int16 x, int16 y, char c, uint16 color) 
 {
   for (unsigned char i =0; i<gfx_retroFontWidth; i++ ) {
     unsigned char line = font[(c*gfx_retroFontWidth)+i];
@@ -121,6 +144,13 @@ gfx_drawCharRetro(volatile uint8* fb, int16 x, int16 y, char c, uint16 color)
       line >>= 1;
     }
   }
+}
+
+
+void
+gfx_drawCharRetro(volatile uint8* fb, int16 x, int16 y, char c, uint16 color) 
+{
+  gfx_bitBlt(fb, charAtlas[c].x, charAtlas[c].y, x, y, 8, 8, fontBuffer);
 }
 
 

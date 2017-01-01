@@ -28,16 +28,17 @@ typedef ULONG uint32;
 
 
 extern volatile struct Custom *custom;
-extern volatile uint16 copper;
 extern volatile uint8 bitplanes;
 extern volatile uint8 spriteBitplanes;
 extern unsigned long verticalBlankCount;
 
+#include "registers.h"
 #include "hw.h"
 #include "si.h"
 #include "init.h"
 #include "screen.h"
 #include "gfx.h"
 #include "audio.h"
+#include "mouse.h"
 
 #endif /* __GAME_H */

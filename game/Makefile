@@ -6,7 +6,8 @@ USERSTACK_ADDRESS=7fffc
 BASE_ADDRESS=4000
 # note: this must be high enough not to conflict with MFMbufE
 BOOTBLOCK_ASM=alpine_bootblock.s
-SRCS=hw_asm.s audio.c glcdfont.c si.c gfx.c trackloader.s init.c screen.c
+C_SRCS=audio.c glcdfont.c si.c gfx.c init.c screen.c mouse.c
+SRCS=hw_asm.s trackloader.s
 P61_MUSIC=0
 
 IMAGES=sprite.png
@@ -25,12 +26,14 @@ MODULE=$(GAME_NAME).s
 PROGRAM_BIN=out/main.bin
 
 VASM=/usr/local/amiga/m68k-amigaos/bin/vasmm68k_mot
-CFLAGS=-warn=-1 -dontwarn=170 -dontwarn=306 -dontwarn=166 -dontwarn=167  -dontwarn=307 -dontwarn=208 -maxoptpasses=100  -c99 -O3
+CFLAGS=-warn=-1 -dontwarn=81 -dontwarn=170 -dontwarn=306 -dontwarn=166 -dontwarn=167  -dontwarn=307 -dontwarn=208 -maxoptpasses=100 -c99 -O3
 
-ASM_SRCS=$(SRCS:.s=.o)
-C_SRCS=$(ASM_SRCS:.c=.o)
-ADF_OBJS=$(addprefix out/adf/, $(C_SRCS))
-WORKBENCH_OBJS=$(addprefix out/workbench/, $(C_SRCS:.s=.o))
+ASM_OBJS=$(SRCS:.s=.o)
+C_OBJS=$(C_SRCS:.c=.o)
+OBJS=$(ASM_OBJS) $(C_OBJS) 
+#OBJS=$(ASM_OBJS) super.o
+ADF_OBJS=$(addprefix out/adf/, $(OBJS))
+WORKBENCH_OBJS=$(addprefix out/workbench/, $(OBJS))
 ALL_TOOLS=$(MAKEADF) $(IMAGECON) $(MAPGEN) $(FADE) $(CROPPA) $(RESIZE)
 ALL_OBJS=out/adf/main.o $(ADF_OBJS)
 ALL_WORKBENCH_OBJS=out/workbench/main.o $(WORKBENCH_OBJS)
@@ -105,6 +108,9 @@ out/workbench/main.o: $(MODULE) $(EXTRA) $(ASSETS)
 out/adf/%.o: %.s
 	$(VASM) $(VASM_ARGS)  -DTRACKLOADER=1 $< -o $@ -I$(AMIGA_INCLUDE)
 	@$(VASM) -depend=make -DTRACKLOADER=1 $(VASM_ARGS) $< -o $@ -I$(AMIGA_INCLUDE) > out/adf/$*.d
+
+out/adf/super.o: $(C_SRCS)
+	vc $(CFLAGS) -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) -c $(C_SRCS) -o $@	
 
 out/adf/%.o: %.c
 	-@vc -deps $(CFLAGS) -S -DTRACKLOADER=1 -I$(AMIGA_INCLUDE) $< -o out/adf/$*.s > /dev/null 2> /dev/null

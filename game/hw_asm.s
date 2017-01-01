@@ -85,8 +85,7 @@ WaitScanLines:	 macro
 	
 	
 _hw_waitScanLines:
-		move.l	(4,sp),d2
-		movem.l	d0-d2/a0,-(sp)
+		movem.l	d0-d1/a0,-(sp)
 	        lea     $dff006,a0
 	.nTimes:
 	        move.w  (a0),d0
@@ -98,12 +97,14 @@ _hw_waitScanLines:
 	        beq     .loop
 	        dbra    d2,.nTimes
 	.done:
-		movem.l	(sp)+,d0-d2/a0
+		movem.l	(sp)+,d0-d1/a0
 	rts
 	
 	
 _hw_readJoystick:
-	;; d0 - returns the state of the buttons in bits 8 and 9, and the lower byte holds the direction of the stick:
+	;; updates the joystick variables to contina the state of the buttons in bits 8 and 9,
+        ;; and the lower byte holds the direction of the stick: 
+	movem.l	d0/d1,-(sp)	
 	btst    #bit_joyb2&7,potgor
         seq     d0
 	add.w   d0,d0
@@ -116,6 +117,7 @@ _hw_readJoystick:
 	and.w   #%1111,d1
 	move.b	(.conv,pc,d1.w),d0
 	move.w	d0,_hw_joystickButton
+	movem.l (sp)+,d0/d1
         rts
 .conv:
         dc.b      0,5,4,3,1,0,3,2,8,7,0,1,7,6,5,0
@@ -156,7 +158,7 @@ Level3InterruptHandler:
 
 .verticalBlank:
 	move.w	#INTF_VERTB,INTREQ(a6)	; clear interrupt bit	
-	add.l	#1,_verticalBlankCount
+	;; add.l	#1,_verticalBlankCount
 	;; MusicPlay
 .checkCopper:
 	move.w	INTREQR(a6),d0

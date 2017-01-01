@@ -7,6 +7,6 @@ extern void audio_playBeat(int beat);
 extern void audio_playShoot(void);
 extern void audio_playInvaderKilled(void);
 extern void audio_playExplosion(void);
-extern void audio_vbl(void);
+extern void audio_vbl(int kill);
 
 #endif

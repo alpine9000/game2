@@ -1,10 +1,13 @@
 #include "game.h"
 
+
+
 void 
-screen_pokeCopperList(volatile uint32 bitplanesPtr)
+screen_pokeCopperList(volatile uint8* frameBuffer, uint16* copper)
 {
   /* poke bitplane pointers into copper list */
-  volatile uint16* copperPtr = &copper;
+  volatile uint16* copperPtr = copper;
+  uint32 bitplanesPtr = (uint32)frameBuffer;
 
   for (int i = 0; i < SCREEN_BIT_DEPTH; i++) {
     copperPtr[1] = (uint16)bitplanesPtr;
@@ -16,12 +19,12 @@ screen_pokeCopperList(volatile uint32 bitplanesPtr)
 
 
 void 
-screen_setup(void)
+screen_setup(uint8* frameBuffer, uint16* copper)
 {
   unsigned i;
   volatile uint16 scratch;
-  volatile uint16* copperPtr = &copper;
-  volatile uint32 bitplanesPtr = (uint32)&bitplanes;
+  volatile uint16* copperPtr = copper;
+  volatile uint32 bitplanesPtr = (uint32)frameBuffer;
 
   /* set up playfield */
   
@@ -35,10 +38,10 @@ screen_setup(void)
   custom->bpl1mod = SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH-SCREEN_WIDTH_BYTES;
   custom->bpl2mod = SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH-SCREEN_WIDTH_BYTES;
 
-  screen_pokeCopperList(bitplanesPtr);
+  screen_pokeCopperList(frameBuffer, copper);
 
   /* install copper list, then enable dma and selected interrupts */
-  custom->cop1lc = (uint32)&copper;
+  custom->cop1lc = (uint32)copper;
   scratch = custom->copjmp1;
   custom->dmacon = (DMAF_BLITTER|DMAF_SETCLR|DMAF_COPPER|DMAF_RASTER|DMAF_MASTER);
   //  custom->intena = (INTF_SETCLR|INTF_VERTB|INTF_INTEN);

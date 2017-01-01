@@ -19,8 +19,6 @@ init_amiga(void)
   custom->bplcon3 = 0xc00;
   custom->bplcon4 = 0x11;
 
-  verticalBlankCount = 0;
-
   hw_interruptsInit();
   
   gfx_init();

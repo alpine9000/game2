@@ -1,5 +1,6 @@
 #include "game.h"
 
+#define SHOW_SPEED
 //#define DEBUG
 
 #define USE(x) do { x = x; } while(0);
@@ -146,6 +147,52 @@ typedef enum {
   SPRITE_BASE = 7,
 } sprite_index_t;
 
+__chip uint8 _frameBuffer[SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT];
+
+
+static __chip uint16 copper[] = {
+  //;;;  bitplane pointers must be first else poking addresses will be incorrect
+  BPL1PTL,0x0000,
+  BPL1PTH,0x0000,
+  0xd407, 0xfffe,
+  COLOR01,0x0f0,
+  0xffdf, 0xfffe,
+  0x0d07, 0xfffe,
+  COLOR01,0x0fff,
+  0x0d47, 0xfffe,
+  COLOR01,0x0f0,
+  0x0d67, 0xfffe,
+  COLOR01,0xfff,
+  0x0e47, 0xfffe,
+  COLOR01,0x0f0,
+  0x0e67, 0xfffe,
+  COLOR01,0xfff,
+  0x0f47, 0xfffe,
+  COLOR01,0x0f0,
+  0x0f67, 0xfffe,
+  COLOR01,0xfff,
+  0x1047, 0xfffe,
+  COLOR01,0x0f0,
+  0x1067, 0xfffe,
+  COLOR01,0xfff,
+  0x1147, 0xfffe,
+  COLOR01,0x0f0,
+  0x1167, 0xfffe,
+  COLOR01,0xfff,
+  0x1247, 0xfffe,
+  COLOR01,0x0f0,
+  0x1267, 0xfffe,
+  COLOR01,0xfff,
+  0x1347, 0xfffe,
+  COLOR01,0x0f0,
+  0x1367, 0xfffe,
+  COLOR01,0xfff,
+  0x1447, 0xfffe,
+  COLOR01,0x0f0,
+  0x1467, 0xfffe,
+  COLOR01,0xfff,
+  0xffff, 0xfffe
+};
 
 static actor_t invaders[NUM_INVADER_COLUMNS*NUM_INVADER_ROWS];
 
@@ -896,13 +943,15 @@ missileBaseCollision()
   int xOffsets[numOffsets] = {0, 1, -1};
 
   for (int y = MISSILE_SPEED; y > 0; y--) {
-    for (int x = 0; x < numOffsets; x++) {
-      for (int i = 0; i < NUM_BASES; i++) {
-	if (actorCollision(&missile, MISSILE_WIDTH, MISSILE_HEIGHT, &bases[i], BASE_WIDTH, BASE_HEIGHT)) {	  
+    if (missile.y >= BASE_TOP) {
+      for (int x = 0; x < numOffsets; x++) {
+	for (int i = 0; i < NUM_BASES; i++) {
+	  if (actorCollision(&missile, MISSILE_WIDTH, MISSILE_HEIGHT, &bases[i], BASE_WIDTH, BASE_HEIGHT)) {	  
 	    if (gfx_getPixel(frameBuffer, missile.x+xOffsets[x], missile.y+y-1)) {
-	    killActor(&missile);
-	    explodeBase(i, 0, missile.x+xOffsets[x], missile.y+y);
-	    return 1;
+	      killActor(&missile);
+	      explodeBase(i, 0, missile.x+xOffsets[x], missile.y+y);
+	      return 1;
+	    }
 	  }
 	}
       }
@@ -923,14 +972,14 @@ bombBaseCollision(int bombIndex)
 
   for (int y = BOMB_SPEED; y >= 0; y--) {
     for (int x = 0; x < numOffsets; x++) {
-      for (int i = 0; i < NUM_BASES; i++) {
-	if (actorCollision(b, BOMB_WIDTH, BOMB_HEIGHT, &bases[i], BASE_WIDTH, BASE_HEIGHT)) {	  
-	  //	unsigned pixel = getSpritePixelRGBA(bases[i].sprite, bases[i].spriteIndex, b->x-bases[i].x+xOffsets[x], bombY-bases[i].y+y);
-	  //if (pixel != RGBA_COLOR_BACKGROUND && pixel != 0) {
-	  if (gfx_getPixel(frameBuffer, b->x+xOffsets[x], b->y+BOMB_HEIGHT)) {
-	    killActor(b);
-	    explodeBase(i, 1, b->x+xOffsets[x], bombY+y-2);
-	    return 1;
+      if (b->y >= BASE_TOP-BOMB_HEIGHT && b->y <= BASE_TOP+BASE_HEIGHT ) {
+	for (int i = 0; i < NUM_BASES; i++) {
+	  if (actorCollision(b, BOMB_WIDTH, BOMB_HEIGHT, &bases[i], BASE_WIDTH, BASE_HEIGHT)) {	  
+	    if (gfx_getPixel(frameBuffer, b->x+xOffsets[x], b->y+BOMB_HEIGHT)) {
+	      killActor(b);
+	      explodeBase(i, 1, b->x+xOffsets[x], bombY+y-2);
+	      return 1;
+	    }
 	  }
 	}
       }
@@ -1065,7 +1114,8 @@ static void
 init()
 {
   
-  frameBuffer = (uint8*)&bitplanes;
+  //  frameBuffer = (uint8*)&bitplanes;
+  frameBuffer = (uint8*)&_frameBuffer;
   spriteFrameBuffer = (uint8*)&spriteBitplanes;
 
   initInvaders();
@@ -1076,7 +1126,22 @@ init()
 static void
 gameLoop(unsigned time)
 {
-  // custom->color[0] = 0xf00;
+#if 0
+    hw_waitVerticalBlank();
+    custom->color[0] = 0xf00;
+
+    gfx_drawStringRetro(frameBuffer, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
+    //    gfx_drawStringRetro(frameBuffer, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
+    //    gfx_drawStringRetro(frameBuffer, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
+    //    gfx_drawStringRetro(frameBuffer, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
+    custom->color[0] = 0x00;
+    return;
+#endif
+
+#ifdef SHOW_SPEED
+    hw_waitVerticalBlank();
+    custom->color[0] = 0xf00;
+#endif
 
   if (numDefenders > 0) {
     if (hw_joystickButton & 0x1) {
@@ -1094,7 +1159,9 @@ gameLoop(unsigned time)
     bombBasesCollision();     
 
     playBeat(time);
+#ifndef SHOW_SPEED
     hw_waitVerticalBlank();
+#endif
     renderGameScreen();
     
     if (frame % 20 == 0) {
@@ -1107,7 +1174,9 @@ gameLoop(unsigned time)
     setCurrentScreen(SCREEN_GAMEOVER);
   }
 
-  //  custom->color[0] = 0x000;
+#ifdef SHOW_SPEED
+  custom->color[0] = 0x000;
+#endif
 }
 
 
@@ -1162,6 +1231,7 @@ demoLoop(int time)
 void
 si_init()
 {
+  screen_setup(&_frameBuffer[0], copper);
   init();
 }
 
@@ -1169,45 +1239,55 @@ si_init()
 void
 si_loop()
 {
-  USE(lastTime);
+  int done = 0;
+  while (!done) {
 
-  audio_vbl();
+    #if TRACKLOADER==0
+    done = mouse_leftButtonPressed();
+    #endif
 
-  time++;
+    USE(lastTime);
+    
+    hw_readJoystick();
 
-  static uint8 lastJoystick = 0;
-
-  if (lastJoystick != hw_joystickButton && hw_joystickButton & 0x1) {
+    audio_vbl(0);
+    
+    time++;
+    
+    static uint8 lastJoystick = 0;
+    
+    if (lastJoystick != hw_joystickButton && hw_joystickButton & 0x1) {
+      switch (currentScreen) {
+      case SCREEN_START:
+	credits--;
+	setCurrentScreen(SCREEN_PLAYER_TURN_MESSAGE);
+	playerTurnMessageTime = time;      
+	break;
+      case SCREEN_DEMO:
+	credits++;
+	setCurrentScreen(SCREEN_START);
+	break;
+      }
+    }
+    
+    lastJoystick = hw_joystickButton;
+    
     switch (currentScreen) {
-    case SCREEN_START:
-      credits--;
-      setCurrentScreen(SCREEN_PLAYER_TURN_MESSAGE);
-      playerTurnMessageTime = time;      
-      break;
     case SCREEN_DEMO:
-      credits++;
-      setCurrentScreen(SCREEN_START);
+      demoLoop(time);
+      break;
+    case SCREEN_START:
+      startLoop(time);
+      break;
+    case SCREEN_PLAYER_TURN_MESSAGE:
+      playerTurnMessageLoop(time);      
+      break;
+    case SCREEN_GAME:
+      gameLoop(time);
+      break;
+    case SCREEN_GAMEOVER:
+      renderGameOver();
       break;
     }
-  }
-
-  lastJoystick = hw_joystickButton;
-
-  switch (currentScreen) {
-  case SCREEN_DEMO:
-    demoLoop(time);
-    break;
-  case SCREEN_START:
-    startLoop(time);
-    break;
-  case SCREEN_PLAYER_TURN_MESSAGE:
-    playerTurnMessageLoop(time);      
-    break;
-  case SCREEN_GAME:
-    gameLoop(time);
-    break;
-  case SCREEN_GAMEOVER:
-    renderGameOver();
-    break;
   }
 }

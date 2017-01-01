@@ -12,6 +12,7 @@ SECTIONS
         *(.data)
         *(CODE)
         *(DATA)
+	*(CHIP_DATA)
         endCode = .;
     } > disk
 
@@ -25,6 +26,7 @@ SECTIONS
         . = endCode;
         *(.bss)
         *(BSS)
+	*(CHIP_BSS)
 	endRam = .;
     } > ram;
 }
