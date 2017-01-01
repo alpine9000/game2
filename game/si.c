@@ -1,7 +1,6 @@
 #include "game.h"
 
-#define SHOW_SPEED
-//#define DEBUG
+//#define SHOW_SPEED
 
 #define USE(x) do { x = x; } while(0);
 #define SPRITE_MAX_SPRITES 6
@@ -21,41 +20,41 @@ typedef enum {
 } screen_t;
 
 typedef struct {
-  int x;
-  int width;
-  int height;
-  int count;
-  int y[SPRITE_MAX_SPRITES];
+  int16 x;
+  int16 width;
+  int16 height;
+  int16 count;
+  int16 y[SPRITE_MAX_SPRITES];
 } sprite_t;
 
 typedef struct {
-  int x;
-  int y;
-  int sprite;
-  int spriteIndex;
+  int16 x;
+  int16 y;
+  int16 sprite;
+  int16 spriteIndex;
   actor_state_t _state;
   void* data;
-  int lastX;
-  int lastY;
+  int16 lastX;
+  int16 lastY;
   actor_state_t lastSpriteIndex;
 } actor_t;
 
 typedef struct {
-  int row;
-  int column;
-  int direction;
+  int16 row;
+  int16 column;
+  int16 direction;
 } invader_data_t;
 
 typedef struct {
   char* text;
-  int x;
-  int y;
+  int16 x;
+  int16 y;
   unsigned color;
 } screen_text_t;
 
 typedef struct {
-  int statusBar;
-  int screenChange;
+  int16 statusBar;
+  int16 screenChange;
 } dirty_t;
 
 #define INVADER_SCREEN_WIDTH 224
@@ -362,13 +361,18 @@ static void
 renderActor(actor_t* actor)
 {
   sprite_t *s = &spriteConfig[actor->sprite];  
+  static volatile struct Custom* _custom = CUSTOM;
+  volatile uint8* dest = frameBuffer;
+  volatile uint8* source = spriteFrameBuffer;
 
   if (actor->_state != DEAD) {
     if (actor->x != actor->lastX || actor->y != actor->lastY || actor->lastSpriteIndex != actor->spriteIndex) {
       if (actor->lastX != -1) {
 	gfx_fillRect(frameBuffer, actor->lastX, actor->lastY, s->width, s->height, 0);
       }
+
       gfx_bitBlt(frameBuffer, s->x, s->y[actor->spriteIndex], actor->x, actor->y, s->width, s->height, spriteFrameBuffer);
+
       actor->lastX = actor->x;
       actor->lastY = actor->y;
       actor->lastSpriteIndex = actor->spriteIndex;
@@ -515,7 +519,7 @@ moveInvaders(int time)
   if (time-last > invaderSpeed) {
     last = time;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 8; i++) {
       actor_t *inv = &invaders[index];
       if (inv->_state == ALIVE) {
 	inv->x += ((invader_data_t*)inv->data)->direction;
@@ -942,8 +946,8 @@ missileBaseCollision()
   #define numOffsets 3
   int xOffsets[numOffsets] = {0, 1, -1};
 
-  for (int y = MISSILE_SPEED; y > 0; y--) {
-    if (missile.y >= BASE_TOP) {
+  if (missile.y >= BASE_TOP) {
+    for (int y = MISSILE_SPEED; y > 0; y--) {      
       for (int x = 0; x < numOffsets; x++) {
 	for (int i = 0; i < NUM_BASES; i++) {
 	  if (actorCollision(&missile, MISSILE_WIDTH, MISSILE_HEIGHT, &bases[i], BASE_WIDTH, BASE_HEIGHT)) {	  
@@ -1021,6 +1025,19 @@ bombCollision()
   }
 }
 
+static void
+explodeInvader(actor_t* inv)
+{
+  audio_playInvaderKilled();
+  inv->_state = EXPLODING;
+  inv->spriteIndex = 2;
+  forceRenderActor(inv);
+  killActor(&missile);
+  score = score + killScores[((invader_data_t*)inv->data)->row];
+  if (score > hiscore) {
+    hiscore = score;
+  }
+}
 
 static void 
 missileCollision()
@@ -1033,24 +1050,19 @@ missileCollision()
     return;
   }
 
+  int16 mx_p_mw = missile.x + MISSILE_WIDTH;
+  int16 my_p_mh = missile.y + MISSILE_HEIGHT;
+  int16 my_m_ih = missile.y - INVADER_HEIGHT;
+  int16 mx_m_iw = missile.x - INVADER_WIDTH;
   for (int i = 0; i < invaderIndex; i++) {
     actor_t *inv = &invaders[i];
-    if (inv->_state == ALIVE) {
-      if (inv->x < missile.x + MISSILE_WIDTH &&
-	  inv->x + INVADER_WIDTH > missile.x &&
-	  inv->y < missile.y + MISSILE_HEIGHT &&
-	  INVADER_HEIGHT + inv->y > missile.y) {
-	audio_playInvaderKilled();
-	inv->_state = EXPLODING;
-	inv->spriteIndex = 2;
-	forceRenderActor(inv);
-	killActor(&missile);
-	score = score + killScores[((invader_data_t*)inv->data)->row];
-	if (score > hiscore) {
-	  hiscore = score;
-	}
-	break;
-      }
+    if (inv->_state == ALIVE &&
+	inv->x < mx_p_mw && 
+	inv->x > mx_m_iw &&
+	inv->y < my_p_mh &&
+	inv->y > my_m_ih) {
+      explodeInvader(inv);
+      break;
     } 
   }
 }
@@ -1126,18 +1138,6 @@ init()
 static void
 gameLoop(unsigned time)
 {
-#if 0
-    hw_waitVerticalBlank();
-    custom->color[0] = 0xf00;
-
-    gfx_drawStringRetro(frameBuffer, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
-    //    gfx_drawStringRetro(frameBuffer, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
-    //    gfx_drawStringRetro(frameBuffer, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
-    //    gfx_drawStringRetro(frameBuffer, 9, 9, "SCORE<1> HI-SCORE SCORE<2>", 1, 3);  
-    custom->color[0] = 0x00;
-    return;
-#endif
-
 #ifdef SHOW_SPEED
     hw_waitVerticalBlank();
     custom->color[0] = 0xf00;
@@ -1167,6 +1167,7 @@ gameLoop(unsigned time)
     if (frame % 20 == 0) {
       renderTime = time-lastTime;      
     }
+
     lastTime = time;
     frame++;
 

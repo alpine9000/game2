@@ -1,13 +1,7 @@
 #include "game.h"
-#include <hardware/blit.h>
 
 #define printf(...)
 #define dprintf(...)
-
-static uint16 dyOffsetsLUT[SCREEN_HEIGHT];
-static uint16 bltcon0LUT[16];
-
-static __chip uint8 fontBuffer[SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT];
 
 typedef struct {
   uint16 x;
@@ -15,6 +9,8 @@ typedef struct {
 } char_lookup_t;
 
 static char_lookup_t charAtlas[127];
+static uint16 dyOffsetsLUT[SCREEN_HEIGHT];
+static __chip uint8 fontBuffer[SCREEN_WIDTH_BYTES*SCREEN_BIT_DEPTH*SCREEN_HEIGHT];
 
 static void _gfx_renderCharRetro(volatile uint8* fb, int16 x, int16 y, char c, uint16 color);
 
@@ -42,9 +38,11 @@ gfx_init()
   }
 }
 
+
 void
 gfx_fillRect(volatile uint8* fb, uint16 x, uint16 y, uint16 w, uint16 h, uint16 color)
 {
+  static volatile struct Custom* _custom = CUSTOM;
   static uint16 startBitPatterns[] = { 0xffff,
 			       0x7fff, 0x3fff, 0x1fff, 0x0fff, 
 			       0x07ff, 0x03ff, 0x01ff, 0x00ff,
@@ -69,50 +67,39 @@ gfx_fillRect(volatile uint8* fb, uint16 x, uint16 y, uint16 w, uint16 h, uint16 
   
   hw_waitBlitter();
 
-  custom->bltcon0 = (SRCC|DEST|0xca);
-  custom->bltcon1 = 0;
-  // custom->bltafwm = 0xffff;
-  custom->bltalwm = 0xffff;
-  custom->bltdmod = SCREEN_WIDTH_BYTES-2;
-  custom->bltcmod = SCREEN_WIDTH_BYTES-2;
-  custom->bltbmod = 0;
-  custom->bltamod = 0;
-  custom->bltadat = startMask;
-  custom->bltbdat = color ? 0xffff : 0x0;
-  custom->bltcpt = fb;
-  custom->bltdpt = fb;
-  custom->bltsize = h<<6 | 1;
+  _custom->bltcon0 = (SRCC|DEST|0xca);
+  _custom->bltcon1 = 0;
+  // _custom->bltafwm = 0xffff;
+  _custom->bltalwm = 0xffff;
+  _custom->bltdmod = SCREEN_WIDTH_BYTES-2;
+  _custom->bltcmod = SCREEN_WIDTH_BYTES-2;
+  _custom->bltbmod = 0;
+  _custom->bltamod = 0;
+  _custom->bltadat = startMask;
+  _custom->bltbdat = color ? 0xffff : 0x0;
+  _custom->bltcpt = fb;
+  _custom->bltdpt = fb;
+  _custom->bltsize = h<<6 | 1;
 
   if (widthWords > 1) {
     hw_waitBlitter();    
-    custom->bltcon0 = (SRCC|DEST|0xca);
-    custom->bltadat = endMask;
-    custom->bltcpt = fb+((widthWords-1)<<1);
-    custom->bltdpt = fb+((widthWords-1)<<1);
-    custom->bltsize = h<<6 | 1;
+    _custom->bltcon0 = (SRCC|DEST|0xca);
+    _custom->bltadat = endMask;
+    _custom->bltcpt = fb+((widthWords-1)<<1);
+    _custom->bltdpt = fb+((widthWords-1)<<1);
+    _custom->bltsize = h<<6 | 1;
   }
 
   if (widthWords > 2) {
     hw_waitBlitter();    
-    custom->bltcon0 = (DEST|(color ? 0xff : 0x00));
-    custom->bltdmod = SCREEN_WIDTH_BYTES-((widthWords-2)<<1);
-    custom->bltdpt = fb+2;
-    custom->bltsize = h<<6 | widthWords-2;
+    _custom->bltcon0 = (DEST|(color ? 0xff : 0x00));
+    _custom->bltdmod = SCREEN_WIDTH_BYTES-((widthWords-2)<<1);
+    _custom->bltdpt = fb+2;
+    _custom->bltsize = h<<6 | widthWords-2;
   }    
 
 }
 
-/*
-
-    00000000 00000000 00000000
-
-  0 00000000
-  1 01000000
-  2 00200000
-  4 00004000
-  7 00000007
-
-*/
 
 uint8
 gfx_getPixel(volatile uint8* fb, int16 x, int16 y) 
@@ -120,6 +107,7 @@ gfx_getPixel(volatile uint8* fb, int16 x, int16 y)
   fb += (y*SCREEN_WIDTH_BYTES) + (x >> 3);
   return *fb & (0x80 >> (x & 0x7));
 }
+
 
 void
 gfx_drawPixel(volatile uint8* fb, int16 x, int16 y, uint16 color) 
@@ -131,6 +119,7 @@ gfx_drawPixel(volatile uint8* fb, int16 x, int16 y, uint16 color)
     *fb &= ~(0x80 >> (x & 0x7));
   }
 }
+
 
 static void
 _gfx_renderCharRetro(volatile uint8* fb, int16 x, int16 y, char c, uint16 color) 
@@ -213,25 +202,28 @@ gfx_drawLine(volatile uint8* fb, int16 x0, int16 y0, int16 x1, int16 y1, uint16 
 void
 gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w, int16 h, volatile uint8* source)
 {
-  uint32 widthWords =  ((w+15)>>4)+1;
-  uint16 shift = (dx&0xf);
+  static volatile struct Custom* _custom = CUSTOM;
 
+  uint32 widthWords =  ((w+15)>>4)+1;
+  int shift = (dx&0xf);
+  
   dest += dyOffsetsLUT[dy] + (dx>>3);
   source += dyOffsetsLUT[sy] + (sx>>3);
 
   hw_waitBlitter();
 
-  custom->bltcon0 = (SRCA|SRCB|SRCC|DEST|0xca|shift<<ASHIFTSHIFT);
-  custom->bltcon1 = shift<<BSHIFTSHIFT;
-  //  custom->bltafwm = 0xffff;
-  custom->bltalwm = 0x0000;
-  custom->bltamod = SCREEN_WIDTH_BYTES-(widthWords<<1);
-  custom->bltbmod = SCREEN_WIDTH_BYTES-(widthWords<<1);
-  custom->bltcmod = SCREEN_WIDTH_BYTES-(widthWords<<1);
-  custom->bltdmod = SCREEN_WIDTH_BYTES-(widthWords<<1);
-  custom->bltapt = source;
-  custom->bltbpt = source;
-  custom->bltcpt = dest;
-  custom->bltdpt = dest;
-  custom->bltsize = h<<6 | widthWords;
+  _custom->bltcon0 = (SRCA|SRCB|SRCC|DEST|0xca|shift<<ASHIFTSHIFT);
+  _custom->bltcon1 = shift<<BSHIFTSHIFT;
+  //  __custom->bltafwm = 0xffff;
+  _custom->bltalwm = 0x0000;
+  _custom->bltamod = SCREEN_WIDTH_BYTES-(widthWords<<1);
+  _custom->bltbmod = SCREEN_WIDTH_BYTES-(widthWords<<1);
+  _custom->bltcmod = SCREEN_WIDTH_BYTES-(widthWords<<1);
+  _custom->bltdmod = SCREEN_WIDTH_BYTES-(widthWords<<1);
+  _custom->bltapt = source;
+  _custom->bltbpt = source;
+  _custom->bltcpt = dest;
+  _custom->bltdpt = dest;
+  _custom->bltsize = h<<6 | widthWords;
 }
+

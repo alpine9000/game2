@@ -5,7 +5,7 @@
 #include <hardware/dmabits.h>
 #include <hardware/intbits.h>
 
-#define CUSTOM ((struct Custom*)0xdff000)
+#define CUSTOM ((volatile struct Custom*)0xdff000)
 #define SCREEN_WIDTH 224
 #define SCREEN_HEIGHT 256
 //#define SCREEN_WIDTH	   320

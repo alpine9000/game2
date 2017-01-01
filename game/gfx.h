@@ -1,6 +1,8 @@
 #ifndef __GFX_H
 #define __GFX_H
 
+#include <hardware/blit.h>
+
 #define gfx_retroFontWidth 5  
 #define gfx_retroFontHeight 8
 
@@ -19,8 +21,8 @@ gfx_getPixel(volatile uint8* fb, int16 x, int16 y);
 void
 gfx_drawPixel(volatile uint8* fb, int16 x, int16 y, uint16 color);
 void
-gfx_bitBlt(volatile uint8* source, int16 sx, int16 sy, int16 dx, int16 dy, int16 w, int16 h, volatile uint8* dest);
+gfx_bitBlt(volatile uint8* dest, int16 sx, int16 sy, int16 dx, int16 dy, int16 w, int16 h, volatile uint8* source);
 void 
 gfx_init(void);
-#endif
 
+#endif
